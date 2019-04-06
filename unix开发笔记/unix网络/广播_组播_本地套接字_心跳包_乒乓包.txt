@@ -1,0 +1,615 @@
+setsockopt(), 
+
+<net/if.h>
+<sys/un.h>
+
+
+
+
+
+广播和组播 都能在UDP内使用. 而且都是UDP的特性
+
+
+广播使用范围:
+    只适用于局域网.
+组播适用范围:
+    局域网和广域网(internet) 都可以
+
+
+
+
+广播的地址是 255.255.255.255  (最后一个255是必须的,前面可以变化)
+
+广播: 通过255这个广播地址进行广播.
+    服务端: 只发送数据, 设置广播地址, 发送到固定端口.
+        创建套接字 - socket
+        fd 绑定服务器ip和端口
+        初始化客户端IP和端口信息
+            struct sockaddr_in cli;
+            cli.sin_family = AF_INET;
+            cli.sin_prot   = htons(9898);
+            inet_pton(AF_INET, "255.255.255.255", &cli.sin_addr.s_addr);
+        发送数据
+            sendto( fd, buf, buf_len, 0, (struct sockaddr*)&client, sizeof(client));
+        设置广播权限
+            int flag = 1;
+            setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &flag, sizeof(flag));
+
+    客户端:  绑定端口, 准备接受数据.
+        创建套接字
+        显示绑定IP和端口
+            struct  sockaddr_in client;
+            client.sin_family = AF_INET;
+            client.sin_prot   = htons(9898);   //这个端口要和服务器发送信息的端口号保持一致.
+            inet_pton(AF_INET, "0.0.0.0" ,&client.sin_addr.s_addr);
+            bind(fd, (struct sockaddr*)&client, sizeof(client));
+        接收数据 - server数据
+            recvfrom(fd, buf, sizeof(buf), 0, NULL, NULL);
+
+广播使用范围:
+    只适用于局域网.
+
+----------------------------------------------
+范例server代码
+
+#include <arpa/inet.h>
+
+int main(int argc, const char* argv[])
+{
+    // 创建套接字
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(fd == -1)
+    {
+        perror("socket error");
+        exit(1);
+    }
+
+    // 绑定server的iP和端口
+    struct sockaddr_in serv;
+    memset(&serv, 0, sizeof(serv));
+    serv.sin_family  = AF_INET;
+    serv.sin_port = htons(8787);    // server端口
+    serv.sin_addr.s_addr = htonl(INADDR_ANY);
+    int ret = bind(fd, (struct sockaddr*)&serv, sizeof(serv));
+    if(ret == -1)
+    {
+        perror("bind error");
+        exit(1);
+    }
+
+    // 初始化客户端地址信息
+    struct sockaddr_in client;
+    memset(&client, 0, sizeof(client));
+    client.sin_family = AF_INET;
+    client.sin_port = htons(6767);  // 客户端要绑定的端口
+    // 使用广播地址给客户端发数据
+    inet_pton(AF_INET, "192.168.123.255", &client.sin_addr.s_addr);
+
+    // 给服务器开放广播权限
+    int flag = 1;
+    setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &flag, sizeof(flag));
+
+    // 通信
+    while(1)
+    {
+        // 一直给客户端发数据
+        static int num = 0;
+        char buf[1024] = {0};
+        sprintf(buf, "hello, udp == %d\n", num++);
+        int ret = sendto(fd, buf, strlen(buf)+1, 0, (struct sockaddr*)&client, sizeof(client));
+        if(ret == -1)
+        {
+            perror("sendto error");
+            break;
+        }
+        
+        printf("server == send buf: %s\n", buf);
+
+        sleep(1);
+    }
+    
+    close(fd);
+
+    return 0;
+}
+
+
+----------------------------------------------
+范例client代码
+
+
+
+int main(int argc, const char* argv[])
+{
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(fd == -1)
+    {
+        perror("socket error");
+        exit(1);
+    }
+
+    // 绑定iP和端口
+    struct sockaddr_in client;
+    memset(&client, 0, sizeof(client));
+    client.sin_family = AF_INET;
+    client.sin_port = htons(6767);  
+    inet_pton(AF_INET, "0.0.0.0", &client.sin_addr.s_addr);
+    int ret  = bind(fd, (struct sockaddr*)&client, sizeof(client));
+    if(ret == -1)
+    {
+        perror("bind error");
+        exit(1);
+    }
+
+    // 接收数据
+    while(1)
+    {
+        char buf[1024] = {0};
+        int len = recvfrom(fd, buf, sizeof(buf), 0, NULL, NULL);
+        if(len == -1)
+        {
+            perror("recvfrom error");
+            break;
+        }
+        
+        printf("client == recv buf: %s\n", buf);
+    }
+
+    close(fd);
+    
+    return 0;
+}
+
+--------------------------------------------------------
+--------------------------------------------------------
+
+
+<net/if.h>
+组播需要这个头文件才可以.
+
+
+组播就是多拨组  , 多拨就是组播组.
+
+组播适用范围:
+    局域网和广域网(internet) 都可以
+
+
+组播地址:
+    224.0.0.0 ~ 244.0.0.255
+        预留的组播地址(永久组地址), 地址244.0.0.0 保留不做分配, 其他地址供路由协议使用; 就是不能用.
+
+    224.0.1.0 ~ 224.0.1.255
+        公用组播地址, 可以用于internet ; 欲使用需申请.
+
+    224.0.2.0 ~ 238.255.255.255 
+        用户可用的组播地址(临时组地址), 全网范围内有效.
+
+    239.0.0.0 ~ 239.255.255.255
+        本地管理组播地址, 仅在特定的本地范围内有效, 如果想测试本地组播,那么用这个范围内的地址就好了.
+
+
+把组播看成一个聊天室, 所有加入过来的人都可以接收到服务端的消息.
+
+    组播需要用到的结构体原型
+        struct ip_merqn {
+            struct in_addr imr_multiaddr;   // 组播组的 IP地址
+            struct in_addr imr_interface;   // 本地某一网络设备接口的IP地址,使用它来寻找组播.小心网段号.
+            struct in_addr imr_address;     // 本地ip  给0.0.0.0, 这个ip会添加到组播地址
+            int            imr_ifindex;     // 网卡编号,需要使用 if_nametoindex(“ens33”); 的返回值来赋值
+        };
+
+        struct in_addr {
+            in_addr_t s_addr;  // 是个无符号int类型.
+        };
+
+
+组播工作流程:  <和广播差不多,小心端口冲突>
+    服务端: 只发送数据, 设置广播地址, 发送到固定端口.
+        创建套接字 - socket
+        fd 绑定服务器ip和端口
+        初始化客户端IP和端口信息
+            struct sockaddr_in cli;
+            cli.sin_family = AF_INET;
+            cli.sin_prot   = htons(9898);
+            inet_pton(AF_INET, "239.0.0.10", &cli.sin_addr.s_addr);
+        设置组播权限
+            struct ip_mreqn flag ;
+            inet_pton(AF_INET, "239.0.0.10", &flag.imr_multiaddr.s_addr);
+            inet_pton(AF_INET, "0.0.0.0",    &flag.imr_address.s_addr);
+            flag.imr_ifindex = if_nametoindex("ens33");  // 这是网卡的名称, ens33是我mac的网卡
+            setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, &flag, sizeof(flag));
+        发送数据
+            sendto( fd, buf, buf_len, 0, (struct sockaddr*)&cli, sizeof(cli));
+
+    客户端:  绑定端口, 准备接受数据.
+        创建套接字  - int fd = socket();
+        显示绑定IP和端口
+            struct  sockaddr_in client;
+            client.sin_family = AF_INET;
+            client.sin_prot   = htons(9898);   //这个端口要和服务器发送信息的端口号保持一致.
+            inet_pton(AF_INET, "0.0.0.0" ,&client.sin_addr.s_addr);
+            bind(fd, (struct sockaddr*)&client, sizeof(client));
+        加入到组播地址
+            struct ip_mreqn fl;
+            inet_pton( AF_INET, "239.0.0.10", &fl.imr_multiaddr.s_addr);
+            inet_pton( AF_INET, "0.0.0.0" ,   &fl.imr_address.s_addr);
+            fl.imr_ifindex = if_nametoindex("ens33"); // 网卡名
+            setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &fl, sizeof(fl));
+        接收数据 - server数据
+            recvfrom(fd, buf, sizeof(buf), 0, NULL, NULL);
+
+组播使用范围:
+    internet 和 局域网. 
+
+
+-------------------------------------------------------
+server 范例代码
+
+int main(int argc, const char* argv[])
+{
+    // 创建套接字
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(fd == -1)
+    {
+        perror("socket error");
+        exit(1);
+    }
+
+    // 绑定server的iP和端口
+    struct sockaddr_in serv;
+    memset(&serv, 0, sizeof(serv));
+    serv.sin_family  = AF_INET;
+    serv.sin_port = htons(8787);    // server端口
+    serv.sin_addr.s_addr = htonl(INADDR_ANY);
+    int ret = bind(fd, (struct sockaddr*)&serv, sizeof(serv));
+    if(ret == -1)
+    {
+        perror("bind error");
+        exit(1);
+    }
+
+    // 初始化客户端地址信息
+    struct sockaddr_in client;
+    memset(&client, 0, sizeof(client));
+    client.sin_family = AF_INET;
+    client.sin_port = htons(6767);  // 客户端要绑定的端口
+    // 使用组播地址给客户端发数据
+    inet_pton(AF_INET, "239.0.0.10", &client.sin_addr.s_addr);
+
+    // 给服务器开放组播权限
+    struct ip_mreqn flag;
+    // init flag
+    inet_pton(AF_INET, "239.0.0.10", &flag.imr_multiaddr.s_addr);   // 组播地址
+    inet_pton(AF_INET, "0.0.0.0", &flag.imr_address.s_addr);    // 本地IP
+    flag.imr_ifindex = if_nametoindex("ens33");
+    setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, &flag, sizeof(flag));
+
+    // 通信
+    while(1)
+    {
+        // 一直给客户端发数据
+        static int num = 0;
+        char buf[1024] = {0};
+        sprintf(buf, "hello, udp == %d\n", num++);
+        int ret = sendto(fd, buf, strlen(buf)+1, 0, (struct sockaddr*)&client, sizeof(client));
+        if(ret == -1)
+        {
+            perror("sendto error");
+            break;
+        }
+        
+        printf("server == send buf: %s\n", buf);
+
+        sleep(1);
+    }
+    
+    close(fd);
+
+    return 0;
+}
+
+
+
+
+-------------------------------------------------------
+client 范例代码
+
+
+int main(int argc, const char* argv[])
+{
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(fd == -1)
+    {
+        perror("socket error");
+        exit(1);
+    }
+
+    // 绑定iP和端口
+    struct sockaddr_in client;
+    memset(&client, 0, sizeof(client));
+    client.sin_family = AF_INET;
+    client.sin_port = htons(6767); // ........ 
+    inet_pton(AF_INET, "0.0.0.0", &client.sin_addr.s_addr);
+    int ret  = bind(fd, (struct sockaddr*)&client, sizeof(client));
+    if(ret == -1)
+    {
+        perror("bind error");
+        exit(1);
+    }
+
+    // 加入到组播地址
+    struct ip_mreqn fl;
+    inet_pton(AF_INET, "239.0.0.10", &fl.imr_multiaddr.s_addr);
+    inet_pton(AF_INET, "0.0.0.0", &fl.imr_address.s_addr);
+    fl.imr_ifindex = if_nametoindex("ens33");
+    setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &fl, sizeof(fl));
+
+    // 接收数据
+    while(1)
+    {
+        char buf[1024] = {0};
+        int len = recvfrom(fd, buf, sizeof(buf), 0, NULL, NULL);
+        if(len == -1)
+        {
+            perror("recvfrom error");
+            break;
+        }
+        
+        printf("client == recv buf: %s\n", buf);
+    }
+
+    close(fd);
+    
+    return 0;
+}
+
+
+
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+
+
+<sys/un.h>
+
+本地套接字 : 主要是为了实现无血缘关系间的进程通信, 具体操作和 有名管道差不多(myfifo).
+
+可以使用 UDP 和 TCP 两种方式来实现 本地套接字.
+
+套接字文件是绑定之后自动创建出来的.
+
+    socket 中的参数修改为 AF_UNIX 或者 AF_LOCAL  来实现本地套接字.
+    绑定的结构体由 sockaddr_in 变更为 sockaddr_un .
+        #define UNIX_PATH_MAX 108      // 套接字文件路径名长度为108个字节
+
+        struct sockaddr_un { 
+            __kernel_sa_family_t  sun_family;   // IP协议,网域. 直接给 AF_UNIX 
+            char     sun_path[UNIX_PATH_MAX];   // 套接字文件的路径
+        };
+
+
+TCP 实现本地套接字流程:     
+    服务端
+        检查套接字文件是否已经存在 ,如果存在就删除它,直接写上去就好,无需判断
+            unlink("/Users/ns/server.socket");
+        创建套接字- 
+            int lfd = socket( AF_UNIX, SOCK_STREAM, 0);
+        绑定  一个套接字文件
+            struct sockaddr_un serv;
+            serv.sun_family = AF_UNIX;
+            strcpy(serv.sun_path, "/Users/ns/server.socket"); // 套接字文件路径,但是现在还不存在
+            socklen_t  len = sizeof(serv);
+            bind( lfd, (struct sockaddr*)&serv, len);       // 绑定成功后 套接字文件就自动创建出来了
+        设置监听
+            listen(lfd, 128 );   //监听最大上限是 128
+        等待接收数据
+            struct sockaddr_un client;
+            int len = sizeof(client);
+            int cfd = accept(lfd, &client, &len);    // 返回一个通信的文件描述符
+        通信
+            send / write
+            recv / read
+        断开连接
+            close(cfd);
+            close(lfd);
+
+    客户端
+        检查套接字文件是否已经存在 ,如果存在就删除它,直接写上去就好,无需判断
+            unlink("/Users/ns/server.socket");
+        创建套接字 
+            int fd = socket( AF_UNIX, SOCK_STREAM, 0);
+        绑定一个套接字文件
+            struct sockaddr_un client;
+            client.sun_family = AF_UNIX;
+            strcpy(client.sun_path, "/Users/ns/client.socket"); // 套接字文件路径,和服务器不同
+            socklen_t  len = sizeof(client);
+            bind( lfd, (struct sockaddr*)&client, len);       // 绑定成功后 套接字文件就自动创建出来了
+        连接服务器
+            struct sockaddr_un serv;
+            serv.sun_family = AF_UNIX;
+            strcpy(serv.sun_path, "/Users/ns/server.socket"); // 套接字文件路径, 和服务器相同
+            connect(fd, (struct sockaddr*)&serv, sizeof(serv));
+        通信
+            send / write
+            recv / read
+        断开连接
+            close(fd);
+
+
+------------------------------------------------------------------------
+
+本地套接字 server 范例代码
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/un.h>
+
+int main(int argc, char* argv[]){
+    int lfd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if( lfd == -1){
+        perror("socket error");
+        exit(1);
+    }
+    
+    //如果套接字文件存在, 则删除套接字文件
+    unlink("server.sock");
+
+    // 绑定
+    struct sockaddr_un serv;
+    serv.sun_family = AF_UNIX;
+    strcpy(serv.sun_path, "server.sock");
+    int ret = bind(lfd, (struct sockaddr*)&serv, sizeof(serv));
+    if( ret == -1){
+        perror("bind error");
+        exit(1);
+    }
+
+    // 监听
+    ret = listen(lfd, 128);
+    if( ret == -1){
+        perror("listen error");
+        exit(1);
+    }
+
+    //等待接收连接请求
+    struct sockaddr_un client;
+    socklen_t  len = sizeof(client);
+    int cfd = accept(lfd, (struct sockaddr*)&client, &len);
+    if( cfd == -1){
+        perror("accept error");
+        exit(1);
+    }
+
+    printf("========client bind file:%s\n",client.sun_path);
+
+    //通信
+    while(1){
+        char buf[1024] = {0};
+        int recvlen = recv( cfd, buf, sizeof(buf), 0);
+        if( recvlen == -1){
+            perror("recv error");
+            break;
+        }
+        else if (recvlen == 0){
+            printf("客户端端开了连接\n");
+            break;
+        }
+        else{
+            printf("recv buf:%s\n",buf);
+            send(cfd, buf, recvlen, 0);
+        }
+    }
+
+    close(cfd);
+    close(lfd);
+    return 0;
+}
+
+
+
+
+
+------------------------------------------------------------------------
+本地套接字 client 范例代码
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
+int main(int argc, char* argv[]){
+    int fd = socket( AF_UNIX, SOCK_STREAM, 0);
+    if( fd == -1){
+        perror("socket error");
+        exit(1);
+    }
+    
+    // 如果当前套接字文件存在,则删除它
+    unlink("client.sock");
+
+
+    //给客户端绑定一个套接字文件
+    struct sockaddr_un client;
+    client.sun_family = AF_UNIX;
+    strcpy( client.sun_path, "client.sock");
+    int ret = bind( fd, (struct sockaddr*)&client, sizeof(client));
+    if ( ret == -1){
+        perror(" bind error");
+        exit(1);
+    }
+
+    // 初始化 server信息
+    struct sockaddr_un serv;
+    serv.sun_family = AF_UNIX;
+    strcpy( serv.sun_path, "server.sock");
+    
+    //连接
+    connect( fd, (struct sockaddr*)&serv, sizeof(serv));
+
+    //通信
+    while(1){
+        char buf[1024] = {0};
+        fgets(buf, sizeof(buf), stdin);
+        if( strlen(buf) == 0){
+            break;  
+        }
+        send(fd, buf, strlen(buf)+1, 0);
+        
+        // 接收数据
+        recv(fd, buf, sizeof(buf), 0);
+        printf("recv buf:%s\n",buf);
+    }
+
+
+    close(fd);
+    return 0;
+}
+
+
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+
+
+心跳包
+    判断客户端和服务器是否处于连接状态
+        心跳机制
+            不会携带大量的数据.
+            每隔一定时间 服务器->客户端/客户端->服务器 发送一个数据包.
+        心跳包看成一个协议
+            应用层协议
+        判断网络是否断开
+            有多个连续的心跳包没收到/没有回复
+            关闭套接字
+        重连
+            重新初始化套接字
+            继续发送心跳包
+
+乒乓包
+    比心跳包携带的数据多一些.
+    除了知道连接是否存在, 还能获取一些信息.
+
+
+------------------------------------------------------------------------
+
+
+
+------------------------------------------------------------------------
+
+
+
+------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+

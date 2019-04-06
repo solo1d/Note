@@ -1,0 +1,348 @@
+socket(), bind(), recv(), send(), connect(), accept(), htonl(), htons(),
+
+<arpa/inet.h>, <unistd.h> , <stdio.h> , <sys/types.h> , <sys/stat.h> , <sys/wait.h> , <string.h>
+<sys/socket.h> , <netinet/in.h>
+
+
+
+socket 编程 - 网络IO编程
+    - 需要进行读写操作
+    - read/write 
+        操作文件描述符
+    - 创建一个套接字,得到的是文件描述. 操作的也是文件描述符. (默认是阻塞的)
+    - 实际操作的是内核的两块缓冲区. 
+        这个缓冲区被分为两部分, 写部分和读部分. 默认是阻塞的.
+        当读缓冲区 中没有数据的时候, read默认阻塞,等待数据出现,然后解除阻塞 把数据取走.
+        缓冲区中的数据流动 是内核自动管理的,不需要人为的干预.
+
+
+socket 编程: 
+    就是 网络通信的函数接口.
+    封装了传输层协议  
+        - tcp  
+        - udp
+    浏览器 - http
+        封装的是 tcp
+
+
+socket 通信分为:
+    - 服务器端  - 被动  - 先启动
+    - 客户端    - 主动  - 后启动
+
+
+套接字概念: 
+    IP 地址:  点分十进制
+    端口号: 就是十进制的数字, 2000-65535  ,尽量选择较高的
+    IP+Port : 地址加端口, htonl ,htons, ntohl, ntohs.
+
+
+-------------------------------------------
+
+网络字节序转换
+    大端  - 网络字节序
+        数据的高位字节 - 存储在内存的低地址位
+
+    小端  - 主机字节序
+        数据的高位字节 - 存储在内存的高地址位
+        常见主机数据是小端存储.
+
+    每个系统都不一样, 所以这个大端和小端都不相同
+    只需要设置ip和端口的时候需要设置, 其他的不需要.
+
+    相关函数:   
+        头文件 #include <arpa/inet.h>
+         类型 int -> int
+         主机字节顺序 -> 网络字节顺序
+            uint16_t htons(uint16_t hostshort);   //端口
+            uint32_t htonl(uint32_t hostlong );  // IP
+        网络字节顺序 ->  主机字节顺序
+            uint16_t ntohs(uint16_t netshort);   // 端口
+            uint32_t ntohl(uint32_t netlong);    // IP
+
+    服务器端 在IP 参数内添加 INADDR_ANY 就可以自动获取 ,端口自定义
+    客户端  需要仔细填写服务器ip和端口
+
+
+-------------------------------------------
+
+IP 地址转换
+    a. 指定IP - 字符串 (点分十进制和二进制转换)
+         本地IP转网络字节序   字符串 -> int (大端方式存储) (点分十进制 转 网络字节序)
+            int inet_pton(int af, const char* src, void* dst);
+                参数:
+                    af  : 地址类型协议  AF_INET
+                    src : 点分十进制的IP (这么写 "127.0.0.1"  带双引号和点的字符串)
+                    dst : 传出参数, 接受转换后的地址,(是 struct in_addr 这个结构体来强转后存储)
+                返回值: 点分十进制
+
+
+         网络字节序转本地IP  int -> 字符串  (网络字节序 转 点分十进制)
+            const char* inet_ntop(int af, const void* src, char* dst, socklen_t size);
+                参数:
+                    af  : 地址类型协议 AF_INET
+                    src : 需要转换的网络字节序的整形IP(是 struct sockaddr_in.sin_addr.s_addr 强转来使用的)
+                    dst : 传出参数, 接收转换后的地址 ,给个64的字符数组就行.
+                    size: 地址字符串大小 就是 dst 的大小
+                返回值:
+                    成功 返回地址字符串指针
+                    出错 返回NULL
+
+
+    点分十进制: 192.168.1.1    4*int
+    字符串  :  "192.168.1.1"  1*char
+
+    范例: int fd = socket(AF_INET, SOCK_STREAM, 0);
+         struct sockaddr_in serv;
+         char ipbuf[64] = {0};
+         inet_pton(AF_INET, "192.168.1.1", &serv.sin_addr.s_addr);
+         inet_ntop(AF_INET, (void*)&serv.sin_addr.s_addr, ipbuf, sizeof(ipbuf));
+
+
+-------------------------------------------
+
+
+------------------------------------------
+
+
+
+网络套接字函数 socket
+绑定  bind
+结构体大小 socklen_t
+
+<sys/socket.h>
+<arpa/inet.h>
+<netinet/in.h>
+socket 参数和详解
+    函数原型:  int socket(int domain, int type, int protocol);
+                doman 参数:  IP协议   AF_INET        ipv4网域  
+                                     AF_INET6       ipv6网域
+				     AF_UNIX	    本地套接字
+                type  参数:  指定采用的哪种协议, SOCK_STREAM    表示采用TCP 流式协议,
+                                             SOCK_DGRAM     表示采用UDP 报式协议.
+                                             SOCK_RAW       允许对底层协议的直接访问, 用于新网络协议测试
+                 protocol  参数: 给0 就好了, 表示按给定的域和套接字类型选择默认协议. 
+
+            返回值:  是一个文件描述符, (就是个套接字)可以使用IO 文件操作来进行读写.  否则-1
+        创建出来的返回值就是套接字.
+
+
+    范例:  int lfd = socket(AF_INET, SOCK_STREAM, 0);
+
+
+将本地的IP 和端口 与创建出的套接字绑定 (客户端不需要绑定, 只有服务端需要)
+    函数原型:   int bind( int scokfd, const struct sockaddr* addr, socklen_t addrlen);
+                sockfd  参数: 创建出的文件描述符
+                addr    参数: 端口和IP  (是个结构体,下面有),可以使用 sockaddr_in 强转 sockaddr 来使用.
+                addrlen 参数: sockaddr 结构体的长度.
+        返回值: 成功返回 0
+               失败返回-1, 并且把error设置一个值
+
+    范例:   struct sockaddr_in server;  
+            bind(lfd, (struct sockaddr*)&server, sizeof(server)); 
+
+
+设置监听同时连接到服务器的客户端的个数
+    函数原型:   int listen(int sockfd, int backlong);
+                sockfd  参数: socket函数创建出来的文件描述符
+                backlong参数: 同时连接的个数,填写同时连接的最大值 128 就可以了
+        返回值: 成功返回 0
+               失败返回-1, 并且把error设置一个值
+
+    范例:   listen(fd, 20);
+
+
+阻塞等待客户端连接请求,并接受连接 (阻塞函数)
+    函数原型:   int accept(int sockfd, struct sockaddr *addr, socklen_t* addrlen);
+                sockfd  参数: 文件描述符, 使用socket 创建出的, 
+                              监听的文件描述符
+                addr    参数: 存储客户端的端口和IP, 传出参数.
+                addrlen 参数: 传入传出参数. (可能是addr 的大小),这个值必须单独拿出来,会有用,绝对不能sizeof()
+
+        返回值: 返回的是一个套接字, 对应客户端
+            服务器端与客户端进程通信使用 accept 的返回值对应的套接字.
+             如果失败则返回 -1 ,并且把errno 设置一个值.
+            
+           * 如果该函数等待连接阻塞时,被信号中断了,那么errno会被设置成 EINTR ,并且返回 -1.那么解决方式是:
+   int ffd = accept(lfd, (struct sockaddr*)&client, &len);   // 出现信号,然后去处理,回来之后就解除阻塞了
+   while(ffd == -1 && errno == EINTR ){
+        ffd = accept(lfd, (struct sockaddr*)&client, &len);   // 再来一次就可以了,
+    }                                                         // 如果再次被信号中断,那也出不去循环.
+
+    范例:    struct sockaddr_in client;
+            socklen_t  len = sizeof(client);
+            int cfd = accept(lfd,(struct sockaddr*)&client, &len);
+
+
+
+创建与指定外部端口的连接 (一般是客户端用来连接服务端的函数)
+    函数原型:   int connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen);
+                sockfd  参数: 套接字
+                addr    参数: 服务器端的IP和端口
+                addrlen 参数: 第二个参数的长度
+        返回值: 成功返回9 ,否则-1, 并且把error设置一个值.
+
+    范例:    struct sockaddr_in server;
+            connect(lfd, (struct sockaddr*)&server, sizeof(server));
+
+
+--上面参数需要用到的结构体
+
+<sys/socket.h>
+struct sockaddr {           /* 内核用来存储大多数地址的结构。*/
+    __uint8_t   sa_len;     /* 这个结构体的总长度 */
+    sa_family_t sa_family;  /* internet 地址类型,  AF_INET,AF_INET6 */
+    char        sa_data[14];    /* 14 字节的协议地址, (有可能会更长) */
+};
+
+struct sockaddr_in {        /* 保存套接字地址 (网络字节序)*/
+    __uint8_t       sin_len;       /* 这个结构体的总长度 */
+    sa_family_t     sin_family;    /* 地址类型 AF_INET, AF_INET6 */
+    in_port_t       sin_port;      /* 端口号 (网络字节序) */
+    struct in_addr  sin_addr;      /* 用来存储IPv4 地址的 结构体, (网络字节序) */ 
+    char            sin_zero[8];   /* 填0 , 这个是为了格式对齐的填充位.*/
+}; 
+
+struct in_addr {        // 用来存储 IPv4 的地址
+    in_addr_t s_addr ;          //   internet地址, 32位IPv4 地址 (网络字节序)
+}
+
+struct sockaddr_in6 {   // 适用于 这个是IPv6 的
+    __uint8_t   sin6_len;   /* length of this struct(sa_family_t) */
+    sa_family_t sin6_family;    /* AF_INET6 (sa_family_t) */
+    in_port_t   sin6_port;  /* Transport layer port # (in_port_t) */
+    __uint32_t  sin6_flowinfo;  /* IP6 flow information */
+    struct in6_addr sin6_addr;  /* IP6 address */
+    __uint32_t  sin6_scope_id;  /* scope zone index */
+};
+
+typedef struct in6_addr {       // IPv6 的地址
+    union {
+        __uint8_t   __u6_addr8[16];
+        __uint16_t  __u6_addr16[8];
+        __uint32_t  __u6_addr32[4];
+    } __u6_addr;            /* 128-bit IP6 address */
+};
+
+
+----------------------------------------------------------------------------------------
+
+socket tcp server 服务器工作流程
+    首先 创建套接字
+        int lfd = socket(AF_INET, SOCK_STREAM, 0) ;    // 用于监听的文件描述符
+    绑定本地IP和端口
+        struct sockaddr_in serv;    // 进行初始化
+        memset(&serv, 0 , sizeof(serv));
+        serv.sin_port = htons(port);   // 进行转换,port 是我的服务监听端口号,需要进行小端转大端的操作(主转网)
+        serv.sin_addr.s_addr = htonl(INADDR_ANY);  // 我的IP,必须是整形IP,需要小端转大端的操作(主转网)
+        serv.sin_family = AF_INET;
+        serv.sin_len = sizeof(serv);
+        bind(lfd, (struct sockaddr*)&serv, sizeof(struct sockaddr));      // 绑定
+    监听
+        listen(lfd, 128 );  // 设置同时连接到我的个数的 128  , 不是最大的连接个数.
+    等待并接收连接请求 (最好转换一下, ntohsl() )
+        struct sockaddr_in client;   // 保存连接过来的 客户端的ip和端口的一个结构体
+        int len = sizeof(sockaddr_in);     // 结构体的大小
+        int cfd = accept(lfd, &client, &len );  // 第二个参数是传出参数, 第三个也是,返回客户端套接字
+            cfd - 用于通信的, 监听是监听, 通信是通信,不一样的, 这里开始就阻塞了, 等待客户端连接
+    通信
+        接受数据: read / recv   (cfd)
+        发送数据: write / send  (cfd)
+    关闭
+        close(lfd);
+        close(cfd);
+
+
+socket tcp client  客户端工作流程
+    首先创建套接字
+        int fd = socket(AF_INET, SOCK_STREAM, 0);
+    连接服务器 - 对于客户端来说不需要设置端口, 因为系统会自动的给一个端口, 而且我们也不关心.只要服务器端口固定就行.
+        struct sockaddr_in server;   // 将这值进行初始化
+        server.sin_addr.s_addr = htonl();
+        server.sin_port = htons(端口号 int 类型的就行);   // 字符串转int,通过这个函数 int atoi(char* buf);
+        server.sin_family = AF_INET;
+        connect(fd, &server, sizeof(server));   //连接服务器
+    通信 (发送数据的时候最好转换一下 htonl() )
+        接受数据: read / recv      (fd)
+        发送数据: write / send     (fd)
+    断开连接
+        close(fd);
+
+
+-------------------------------------------------------------------------------------------
+标准模版格式:
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <arpa/inet.h>
+#include <pthread.h>
+#include <unistd.h>
+
+int main(int argc, char* argv[]){
+
+    // 将端口参数 设置为运行 的第二个参数
+    if(argc < 2){
+        printf("eg: ./a.out port\n");
+        exit(1);
+    }
+    struct sockaddr_in serv_addr;
+    socklen_t serv_len = sizeof( serv_addr );
+    int port = atoi(argv[1]);
+
+    // 创建套接字
+    int lfd  = socket( AF_INET, SOCK_STREAM, 0);
+
+    // 初始化服务器
+    memset(&serv_addr, 0, serv_len);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(port);
+
+    //绑定IP和端口
+    bind( lfd, (struct sockaddr*)&serv_addr, serv_len);
+
+    //设置同时连接的最大个数
+    listen( lfd, 128);
+    printf("Start accept...\n");  // 开始等待连接了
+
+    struct sockaddr_in client_addr;
+    socklen_t cli_len = sizeof(client_addr);
+    while (1){
+       // 开始阻塞  ,等待连接了  
+        int cfd = accept(lfd, (struct sockaddr*)&client_addr, &cli_len);
+         while( cfd == -1 && errno == EINTR ){
+             // 这个循环是为了避免被信号扰乱阻塞属性
+            cfd = accept(lfd, (struct sockaddr*)&client_addr, &cli_len);
+         }
+
+         // 这里开始就是自定义的核心程序了 
+    }
+    
+    close(lfd);
+    close(cfd);
+    return 0;
+}
+
+
+
+
+
+-------------------------------------------------------------------------------------------
+
+ 
+数据接受 (就是读文件描述符)
+    ssize_t read( int fd,     void* buf, size_t count);
+    ssize_t recv( int sockfd, void* buf, size_t   len, int flags);
+                参数都和read 一模一样, 只不过flags 一直给0 变成默认权限就好了.
+                flags : MSG_PEEK , 这个参数可以从缓冲区拷贝数据,而且缓冲区数据不清除.以便查看下个数据.
+
+数据发送 (就是写文件描述符)
+    ssize_t write( int fd,     void* buf, size_t count);
+    ssize_t send ( int sockfd, void* buf, size_t   len, int flags);
+                参数都和 write 一模一样. 只不过flags 一直给0, 变成默认权限就好了.
+
+
+
+-------------------------------------------------------------------------------------------

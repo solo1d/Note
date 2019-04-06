@@ -1,0 +1,239 @@
+kill(),  
+setitimer(),  sigaction(), 
+siganl(), 
+sigemptyset (), sigfillest () ,sigaddset (), sigdelset (), sigismember(), sigprocmask(), sigpending()
+ctime(),  time() 
+<sys/time.h> , <unistd.h> , <signal.h> , <time.h> , 
+
+
+
+
+信号:
+    特点:
+        简单.
+        携带的信息量少.
+        使用在某个特定的场景中.
+
+    信号的状态 
+        产生信号.  1, 键盘指令   2,命令kill  3,函数kill   4,内核产生并发送的
+        未决状态  - 没有被进程处理的信号   
+        递达   - 信号被拦截处理了  - 1,忽略  2,捕捉, 3,执行默认或自定义动作
+
+
+    处理方式
+        信号的优先级比较高, 进程收到信号之后, 暂停正在处理的工作, 优先处理信号, 处理完成之后再继续暂停的工作.
+
+    信号的四要素
+
+    通过man 文档查看信号
+        man 7 siganl 
+        SIGKILL , SIGSTOP 这两个信号不允许捕捉,修改,自定义,忽略等操作.
+
+    概念: 阻塞信号集, 未决信号集  { 存在于pcb中(pcb存在于内核中) ,用户不能直接操作这两个集合 }
+        阻塞信号集:  
+            存放的是要屏蔽的信号.将某个信号放到阻塞信号集中,这个信号就不会被进程处理了.
+                阻塞解除之后,信号就从未决变成了 递达状态.
+
+        未决信号集:
+            没有被处理的信号的一个集合. 所有信号产生后都在这里,然后再发送给程序.
+
+        自定义信号集:
+            用户自定义的信号的一个集合,用户自定义,没在内核中.
+
+        这三个信号集,每个都可以看成是一个数组(sigset_t), 里面只存在1和0, 1代表有,0代表无, 用户只可以操作自定义信号集.
+
+
+
+    信号处理和程序流程:
+        a. 信号产生, 信号处于未决状态, 进程收到信号之后,信号被放入未决信号集.
+        b. 放入未决信号集中的信号等待处理, 在处理之前需要做一件事情: 去查看阻塞信号集中,该信号对应的标识位是否为1,如果为
+            1 就不处理, 如果为0 则处理该信号.
+        c. 当阻塞信号集中该信号对应的标志位 为0的时候,该信号被处理.
+
+
+    严格注意!!   屏蔽信号: 只是将信号处理延后执行( 延至解除屏蔽) ;
+                忽略信号: 表示将信号丢弃处理.
+
+
+
+常规信号一览表:  *表示重要内容
+编号   信号     - 对应事件   -    默认动作
+1*   SIGHUP  -  用户退出shell 时,由该shell启动的所有进程将收到这信号 .         -  终止进程
+2    SIGINT  -  按下 Ctrl+c 组合键时,用户终端正在运行中的由该终端启动程序发出信号 -  终止进程
+3*   SIGQUIT -  按下 Ctrl+\ 组合键时,产生该信号,用户终端向正在运行中的由该终端发出信号   -  终止进程
+4    SIGILL  -  cpu 检测到某些进程执行了非法指令.                            -  终止进程 并产生core文件
+5    SIGTRAP -  该信号由断点指令或其他 trap 指令产生.                        -  终止进程 并产生core文件
+6*   SIGABRT -  调用 abort 函数时产生该信号. 异常终止的信号                  -  终止进程 并产生core文件
+7    SIGBUS  -  非法访问内存地址, 包括内存对齐出错.                          -  终止进程 并产生core文件
+8    SIGFPE  -  发生致命运算错误时发出,包括浮点运算错误,溢出错误,被除数为0错误等. -  终止进程 并产生core文件
+9*   SIGKILL -  无条件终止进程. 本信号不能被忽略,捕捉 和阻塞.                  -  终止进程.可以杀死任何进程
+10   SIGUSE1 -  用户定义的信号. 即程序员可以在程序中定义并使用该信号.            -  终止进程
+11*  SIGSEGV -  指示进程进行了无效内存访问(段错误).                           -  终止进程 并产生core文件
+12   SIGUSR2 -  另外一个用户自定义信号. 程序员可以在程序中定义并使用该信号        -  终止进程
+13*  SIGPIPE -  Broken pipe 向一个没有读端的管道写数据.                      -  终止进程
+14*  SIGALRM -  定时器超过, 超过的时间由系统调用 alarm 设置 .                 -  终止进程
+15   SIGTERM -  程序结束信号. 该信号可以被阻塞和终止.用来表示程序正常退出.       - 终止进程
+16   SIGSTKFLT -linux 早期版本出现的信号.现仍保留向后兼                      - 终止进程
+17*  SIGCHLD -  子进程结束时, 父进程会收到这信号.                            - 忽略这信号
+18   SIGCONT -  如果进程已停止, 则使其继续运行.                              - 继续 / 忽略
+19*  SIGSTOP -  停止进程的执行. 信号不能被忽略,处理 和阻塞.                    - 为终止进程
+20*  SIGTSTP -  停止终端交互进程的运行. 按下< ctrl + z >组合键时,会产生该信号.  - 暂停进程
+21   SIGTTIN -  后台进程读终端控制台.                                       - 暂停进程
+22   SIGTTOU -  该信号类似于SIGTTIN,在后台进程要向终端输出数据时发生.           - 暂停进程
+23   SIGURG  -  套接字上有紧急数据时,向当前正在运行的程序发些出信号,报告有紧急数据到达.   - 忽略该信号
+24   SIGXCPU -  进程执行时间超过了分配给进程的CPU时间,系统产生该信号并发送给进程.  - 终止进程
+25   SIGXFSZ -  超过文件的最大长度设置.                                      - 终止进程
+26   SIGVTALRM -虚拟时钟超时时产生该信号.类似于SIGALRM 但是该信号只能计算该进程占用cpu的使用时间.  - 终止进程
+27   SIGPROF -  类似于 SIGVTALRM, 它光包括该进程占用CPU时间,还包括执行系统调用时间.  - 终止进程
+28   SIGWINCH - 窗口变化大小时发出.                                            - 忽略该信号
+29   SIGIO   -  此信号向进程指示发出了一个异步IO 事件.                            - 忽略该信号
+30   SIGPWR  -  关机.                                                        - 终止进程
+31   SIGSYS  -  无效的系统调用.                                                - 终止进程并产生 core 文件.
+34~64 SIGRTMIN ~ SIGRTMAX - linux的实时信号,他们没有固定的含义,(可以由用户自定义).  - 终止进程
+
+
+
+-----------------------------------------------------------------------
+
+<sys/time.h>
+<unistd.h>
+<signal.h>
+
+信号相关函数.
+1   kill -- 发送信号给指定进程.
+        函数原型: int kill (pid_t pid, int sig);
+                    pid  参数: 接收信号的程序 pid
+                    sig  参数: 要发送的是哪个信号. 写宏, 不要写数字.
+
+2   raise -- 发送信号给自己的进程.
+        函数原型: int raise(int sig);
+            sig 参数: 信号宏 ,  毕竟是给自己发的 ,必须要设定参数.
+
+3  abort  -- 给自己发送异常终止信号. (SIGABRT)
+        函数原型: void abort(void);
+            没有参数,没有返回值,永远也不会调用失败.
+
+<unistd.h>
+4  闹钟(定时器)
+     alarm -- 设置定时器( 每个进程只有一个定时器,多次设置只是重置时间而已 )
+        使用的是自然定时法, 就是正常时钟的时间.
+            不受进程状态的影响.
+        函数原型:  unsigned int alarm(unsigned int seconds);
+                seconds 参数: 秒数. 运行时间.
+                返回值 : 过去了多少秒 , 与设定值相等 退出程序.
+
+            real(运行时间) =  user(用户) + sys(内核) + 损耗(来自I/O操作)
+
+            unsigned int ret = alarm(10);    // 表示 还有10秒钟 程序结束, ret = 0
+                         ret = alarm(2);     // 重置了, 表示还剩下2秒就结束. ret = 8
+
+<sys/time.h>
+     setitimer -- 定时器,并实现周期性定时. 到设定时间的时候它就会发出一个信号,这个信号可以被捕捉处理,由which参数决定.
+        函数原型: 
+        int setitimer( int which,    //定时法则 ITIMER_REAL,ITIMER_VIRTUAL,ITIMER_PROF ,返回信号不同要注意
+            const struct initmerval* new_value,   // 定时器的设置,第一次触发时间和循环周期.
+            struct itimaerval* old_value          // 用不到 给NULL 就好了. 他会记录上次定时的设置,是传出参数.
+                    );
+
+
+        struct itimerval { 
+            struct timeval it_interval;    // 定时器循环周期.
+            struct timeval it_value;       // 第一次触发定时器的时间.
+        }
+
+
+        struct timeval {
+            time_t        tv_sec;  // seconds 秒 ,        如果这两个值都赋值了,那么他们会做相加操作,精确计时 
+            suseconds_t  tv_usec;  // microseconds  微秒, 都必须赋值, 否则会出现乱值.
+        }
+
+
+        范例:  struct itimerval new_value;
+              new_value.it_interval.tv_sec = 2;  // 第一次触发时间  2秒 
+              new_value.it_interval.tv_usec = 0;  //0 微秒
+
+              new_value.it_value.tv_sec = 1;  //周期性定时  1秒.
+              new_value.it_value.tv_usec = 0;  //0 微秒
+              
+              setitimer(ITIMER_REAL, &new_value, NULL);
+              // 开始计时, 自然倒计时(real)两秒, 第一次触发.  (会发送一个信号 SIGALRM 给当前程序)
+              // ITIMER_VIRTUAL 用户时间 会发送 SIGVTALRM 信号
+              // ITIMER_PROF    系统时间 会发送 SIGPROF 信号
+              // 程序可以捕捉这些信号, 而且执行相应的自定义内容,  如果不捕捉和修改,那么程序会结束.
+
+
+<time.h>
+获取当前时间 和时间格式化输出
+    time_t curtime;             //首先定一个time_t 类型的变量,来接受时间
+    time(&curtime);             // time读取当前时间后, 它会将时间写入 curtime 中.但是不能直接拿来使用.
+    char* ptime = ctime(&curtime);  // ctime的作用是格式化转换, 将time_t 类型的参数,转换为char* 类型的字符串,
+    printf("%s",ptime);     // 输出已经格式化完成的时间.
+
+
+
+
+
+-----------------------------------------------------------------------
+
+
+<signal.h>
+设置自定义信号集和屏蔽信号集, 读取未决信号集,系统操作函数
+
+    int sigemptyset(sigset_t* set);  // 将set内所有的内容全部重值为空 (就是0)
+    int sigfillest (sigset_t* est);  // 将set内所有的内容全部重值为有 (就是1) , 太暴力了,不要用
+    int sigaddset (sigset_t* set, int signo); // 将signo 信号加入到set集合. 要阻塞哪个信号,就添加哪个信号
+    int sigdelset (sigset_t* set, int signo); // 从set集合中,移除 signo 信号.
+    int sigismember(const sigset_t* set, int signo);  // 判断信号是否存在, 存在返回1, 不存在返回0
+
+        sigset_t   是一个类型, 需要自己定一个数值,然后传入到函数中.操作完全靠函数. 例如: sigset_t set; 
+
+sigprocmask  函数{ 屏蔽 和 解除信号屏蔽, 将自定义信号集设置给阻塞信号集 }
+    函数原型:  int sigprocmask(int how, const sigset_t* set, sigset_t *oldset);
+                    how   参数:  SIG_BLOCK    set表示添加需要屏蔽的信号,相当于 mask= mask|set
+                                SIG_UNBLOCK  set表示需要接触屏蔽的信号,相当于 mask= mask|~set
+                                SIGSETMASK   set表示替换原始屏蔽集, 相当于覆盖, mask = set 
+                    
+                    set   参数:  用户自定义的信号集.
+                    
+                    oldset 参数: 设置之前的阻塞信号集的状态, 传出参数, 相当于原状态的备份. 不感兴趣可以设置为 NULL
+
+                    返回值: 成功返回0,  失败返回 -1, 并设置errno
+
+
+sigpending  函数 { 读取当前进程的未决信号集 }
+    函数原型: int sigpending(sigset_t* set);
+            set  参数: 内核将未决信号集写入set
+
+
+-----------------------------------------------------------------------
+
+
+信号捕捉  这个操作一定要写在发出信号之前,要不然容易无法捕捉.
+
+siganl 函数 { 捕捉信号,并执行传入的函数,但是这个函数并不是全平台的动作都相同,有些差异,但是下面的 sigaction 全平台统一}
+    函数原型:
+    typedef void (*sighandler_t)(int);    // 回调函数指针.需要自己定义一个这样的函数,传入的参数 int 是信号编号
+    sighandler_t signal(int signum, sighandler_t handler);   // 有个回调函数参数, 返回一个函数指针.
+        signum  参数: 要捕捉的信号, 尽量传入宏,因为信号在每个系统的位置不同.
+        handler 参数: 处理函数, 捕捉到signum 的信号之后,会自动执行这个函数指针 指向的函数.(回调函数,用户自定义)
+            返回值:  可以忽略, 没什么用.
+
+
+sigaction 函数 { 捕捉信号, 全平台统一 }
+    函数原型:
+    typedef void (*sighandler_t)(int);  //处理函数回调函数指针.需要自己定义一个这样的函数,传入参数 int 是信号编号
+
+        int sigaction(int signum,        // 许要捕捉的信号(宏)
+            const struct sigaction* act, // 捕捉之后的行为参数, 就是 下面定义的结构体, 初始化3个值就可以了.
+            struct sigaction* oldact     // 上一次捕捉信号的设置,给 NULL 就行了
+            );
+
+        struct sigaction {   
+            void  (*sa_handler)(int);  // 处理函数, 回调函数指针,
+        //  void  (*sa_sigaction)(int);  // 不会使用, 放弃, 不设置.
+            sigset_t sa_mask;            // 在信号处理函数执行过程中,临时屏蔽指定的信号.函数执行完毕后自动解除.
+            int    sa_flags;             // 设置为0 是调用sa_handler, 其他值是调用sa_sigaction, 一般给0 就好.
+        //  void  (*sa_restorer)(void);  // 该参数被废弃了,不要使用
+        }
+
+-----------------------------------------------------------------------

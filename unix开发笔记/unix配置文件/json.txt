@@ -1,0 +1,316 @@
+非常简单
+
+
+JSON
+
+1. cjson的使用
+https://files.cnblogs.com/files/piaoyang/cJSONFiles.rar
+    - 压缩包解压缩，直接使用里边的cJSON.c和cJSON.h即可 
+    - 链接时还需要加上-lm 表示链接math库
+
+2. json的格式
+    - json数组
+        char array[23] = "slkjflajslfd"; - c
+        中括号[整形, 字符串, 布尔类型, json数组, json对象]
+        [123, 123.2, true, false, [12, 34, 56, "hello, world"]]
+    
+    - json对象
+        {}中是一些键值对 
+        {
+            "name":"zhang3",
+            "name2":"li4"
+        }
+
+        key值:必须是 字符串,不重复
+        value值: json对象, json数组, 布尔, 整形, 字符串
+
+    - json数组+json对象 
+    {
+    "name":"zhang3",
+     "name2":"li4",
+      "张三":{
+            "别名":"老王",
+            "性别":"男",
+            "年龄":34,
+            "孩子":["小红", "小绿", "小黑"] 
+        }
+    }
+
+3. C语言json开源解析库 - cjson
+        (只需要将 cJSON-master.zip 解压, 把 cJSON.h 和 cJSON.c 取出来和自己的源码进行编译即可)
+        (因为cJSON 源码需要数学库  所以编译的时候需要添加  -lm 才行.)
+                    gcc new.c jSON.c -lm -o new
+
+        全都是包含关系, 节点和父节点的关系.
+
+    - 生成json文件
+        创建一个json对象
+            cJSON *cJSON_CreateObject(void); 
+
+        往json对象中添加数据成员
+            void cJSON_AddItemToObject(
+                            cJSON*      object,   // json对象
+                            const char* string,   // key值
+                            cJSON*      item      // value值(int，string，array，obj)
+                            );
+
+        创建一个整型值
+            cJSON *cJSON_CreateNumber(double num);
+
+        创建一个字符串
+            cJSON *cJSON_CreateString(const char *string);
+
+        创建一个bool 类型的值
+            cJSON *cJSON_CreateBool(int b);   --给1和0
+
+        创建一个json数组
+            cJSON *cJSON_CreateArray(void); -- 空数组
+        
+        创建默认有count个整形值的json数组
+            cJSON *cJSON_CreateIntArray(
+                            const int*  numbers,
+                            int         count
+                            );     
+            int arry[] = {8,3,4,5,6};
+            cJSON_CreateIntArray(arry, 5);
+
+        往json数组中添加数据成员
+            void cJSON_AddItemToArray(
+                            cJSON *array, 
+                            cJSON *item);
+
+        释放jSON结构指针
+            void cJSON_Delete(cJSON *c);
+        
+        将JSON结构转化为字符串
+            char *cJSON_Print(cJSON *item);
+                ▪ 返回值需要使用free释放
+                ▪ FILE* fp = fopen(); 
+                ▪ fwrite();
+                ▪ fclose();
+
+
+
+    - 解析json文件
+   1.cJSON *cJSON_Parse(const char *value);
+    解析JSON数据包，并按照cJSON结构体的结构序列化整个数据包。可以看做是获取一个句柄。
+
+    2.cJSON *cJSON_GetObjectItem(cJSON *object,const char *string);
+        功能：获取json指定的对象成员
+        参数：*objec：第一个函数中获取的句柄。
+              string：需要获取的对象
+        返回值：这个对象成员的句柄.
+    如果json格式的对象成员直接就是字符串那么就可以直接通过结构体中的valuestring元素来获取这个成员的值
+
+    3.cJSON *cJSON_GetArrayItem(cJSON *array,int item);
+
+        功能：有可能第二个函数中获取到的是成员对象值是一个数组，那么就需要用到这个函数。
+                用来获取这个数组指定的下标对象
+
+        参数：*array：传入第二步中返回的值
+        　　　 item：想要获取这个数组的下标元素
+        返回值：这个数组中指定下标的对象。然后在对这个返回值重复使用第二步函数就可以获取到各个成员的值了。
+
+        也就是说对象是数组的比是字符串的要多用一个cJSON_GetArrayItem函数，其他的没区别。
+
+    4.cJSON_Delete(cJSON* object);
+        用来释放你第一步获取的句柄，来释放整个内存。用在解析完后调用
+
+
+-----------------------------------------------------
+--- cJSON结构体
+#define cJSON_Invalid       (0)             // 这些内容是用来判断 
+#define cJSON_False         (1 << 0)        // 位移操作, 将1的向左位移0个bit
+#define cJSON_True          (1 << 1)
+#define cJSON_NULL          (1 << 2)        // 将1 向左位移 2个bit, 会得到 1*2*2 = 4
+#define cJSON_Number        (1 << 3)
+#define cJSON_String        (1 << 4)
+#define cJSON_Array         (1 << 5)        // 得到 1*2*2*2*2*2 = 32
+#define cJSON_Object        (1 << 6)
+#define cJSON_Raw           (1 << 7)
+
+/* The cJSON structure: */ 
+typedef  struct cJSON
+{
+    struct cJSON *next;     /* 遍历数组或对象链的向后的链表指针 */
+    struct cJSON *prev;     /* 遍历数组或对象链的向前的链表指针 */
+    struct cJSON *child;    /* 数组或对象的孩子节点 */
+
+    int type;               // 结构体中存储数据的类型, 把它和上面的宏进行对比就可以拿到正确的类型.
+    char *valuestring;      // 如果type是 cJSON_String ,那么这里会存储数据,下面就没有数值
+    int valueint;           // 如果type是 cJSON_Number或者True , False 的话,这里就会有数据
+    double valuedouble;     // 这里存储的是 double  
+    
+    char *string;           // key 的名字
+} cJSON;
+
+---------------------------------------------------
+QT中的json类 
+
+    QJsonDocument- json文档 
+    QJsonArray - 数组 
+    QJsonObject - 对象 
+    QJsonValue - 对数据的封装
+   
+---------------------------------------------------
+---------------------------------------------------
+---------------------------------------------------
+
+简单文件范例
+
+
+{
+    "一汽大众":"没有",
+    "奥迪": {
+        "乱写": [11, 33, true ,"void" ]
+    },
+
+    "不能":"出现同级相等的内容"
+}
+
+
+---------------------------------------------------
+---------------------------------------------------
+---------------------------------------------------
+
+创建模版
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <math.h>
+#include "cJSON.h"
+
+
+int main(int argc, char* argv[]){
+    // 创建对象
+    cJSON* obj = cJSON_CreateObject();
+    
+    // 创建一个子对象
+    cJSON* subObj = cJSON_CreateObject();
+    // 添加 key-value
+    cJSON_AddItemToObject(subObj, "factory", cJSON_CreateString("一汽大众"));
+    cJSON_AddItemToObject(subObj, "last", cJSON_CreateNumber(31));
+    cJSON_AddItemToObject(subObj, "price", cJSON_CreateNumber(83));
+    cJSON_AddItemToObject(subObj, "sell", cJSON_CreateNumber(49));
+    cJSON_AddItemToObject(subObj, "sum", cJSON_CreateNumber(31));
+
+    // 创建一个数组
+    cJSON* array = cJSON_CreateArray();
+    // 向array 数组中添加元素
+    cJSON_AddItemToArray( array, cJSON_CreateNumber(123));
+    cJSON_AddItemToArray( array, cJSON_CreateBool(1));
+    cJSON_AddItemToArray( array, cJSON_CreateString("hello world"));
+    
+    // 数组中的对象
+    cJSON* subsub = cJSON_CreateObject();
+    cJSON_AddItemToObject( subsub, "梅赛德斯奔驰", cJSON_CreateString("心所向, 持以恒"));
+    cJSON_AddItemToArray( array, subsub);
+    cJSON_AddItemToArray( array, cJSON_CreateNumber(123));
+
+    cJSON_AddItemToObject(subObj, "other", array);
+    
+    // 添加键值对
+    cJSON_AddItemToObject( obj, "奔驰", subObj);
+    
+    // 格式化
+    char* data = cJSON_Print(obj);
+    //写入文件
+    FILE*  fp = fopen("char.json", "wb");
+    fwrite(data, sizeof(char), strlen(data)+1, fp);
+    fclose( fp);
+    cJSON_Delete( obj);
+
+
+
+
+    return 0;
+}
+
+
+
+
+
+
+---------------------------------------------------
+---------------------------------------------------
+---------------------------------------------------
+
+解析模版
+
+
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "cJSON.h"
+#include <math.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+
+
+int main(int argc, char* argv[]){
+    
+
+    char* out = NULL;
+    char  FileBuff[10240] = {0};
+    FILE* fp = NULL;
+    cJSON* json = NULL;
+
+    if( ( fp = fopen( "/Users/ns/temp/char.json", "rb")) != NULL){
+        while( 0 != fread(FileBuff, 1, sizeof(FileBuff), fp)){
+            json = cJSON_Parse( FileBuff);
+            out  = cJSON_Print( json );
+            cJSON* arrayItem = cJSON_GetObjectItem(json, "奔驰");
+            
+            cJSON* object_ar = cJSON_GetObjectItem(arrayItem, "factory");
+            printf("{\n ");
+            printf("\b\b %s: %s\n",object_ar->string, object_ar->valuestring);
+            
+            object_ar = object_ar->next;
+            printf("\b\b%s: %d\n",object_ar->string, object_ar->valueint);
+            
+            object_ar = object_ar->next;
+            printf("\b\b%s: %d\n",object_ar->string, object_ar->valueint);
+        
+            object_ar = object_ar->next;
+            printf("\b\b%s: %d\n",object_ar->string, object_ar->valueint);
+        
+            object_ar = object_ar->next;
+            printf("\b\b%s: %d\n",object_ar->string, object_ar->valueint);
+        
+            object_ar = object_ar->next;
+            printf("\b\b%s : ", object_ar->string);
+            object_ar = object_ar->child;
+            printf("[ %d,",object_ar->valueint);
+            
+            object_ar = object_ar->next;
+            printf(" %d,",object_ar->valueint);
+                    
+            object_ar = object_ar->next;
+            printf(" %s,",object_ar->valuestring);
+            
+            object_ar = object_ar->next;
+        //  cJSON* object_ar2 = object_ar->child;
+            printf(" { %s : %s },",object_ar->string ,object_ar->valuestring);
+            
+            object_ar = object_ar->next;
+            printf(", %d ]\n",object_ar->valueint);
+        
+            printf("\b}\n}");
+        }
+        cJSON_Delete(json);
+        fclose(fp);
+    }
+    return 0;
+}
+
+

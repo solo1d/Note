@@ -1,0 +1,90 @@
+﻿GitHub使用规则笔记
+
+仓库 (Repository) : 存放代码和项目，每个项目就是一个仓库。
+
+收藏 (Star) :  相当于收藏网页
+
+复制克隆项目(Fork) : 复制
+
+签名信息保存在 config 配置文件中 [user],系统级别保存在 cd ~ 目录下的 .gitconfig
+签名: 用户名     lq
+        邮件地址: 286233475@qq.com
+        作用: 是用来区分不用开发人员身份.邮件地址无效也无所谓.
+        辨析: 这里设置的签名和登陆远程库(代码托管中心)的账号,密码没有任何关系 .
+        命令 : 项目级别 / 仓库级别 : 仅在当前本地库范围内有效.
+                        git config  user.name lq
+                        git config user.email 286233475@qq.com
+                 系统用户级别 : 登陆当前windous系统或mac系统的操作系统用户范围.系统环境变量
+                        git config --global user.name lq
+                        git config --giobal user.email 286233475@qq.com
+                  优先级 : 就近原则 : 项目级别优先于系统用户级别,两者都有时采用项目级别的签名
+                               如果只有系统用户级别的签名,就以系统用户级别的签名为准.
+                               二者都没有.则不允许修改.
+
+版本的前进和后退主要是依靠 HEAD 这个指针来进行的,而且有三种方式,
+基于索引值操作, 依靠 git log --oneline 命令返回的索引值来进行前进和后退版本操作.
+使用 ^ 符号, 只能后退,不能向前!!! git reset --hard HEAD^ 后退版本一步
+使用 ~ 符号. 只能后退,不能前进!!! git reset --hard HEAD~<数字> 后退数字步.
+
+** git 命令** 
+Git bash Here 中的命令:
+
+git init <目录路径>  初始化一个空的Git仓库.生成.git文件.里面拥有 config 配置文件
+git add <file> 创建初始化本地库/工作区(写代码)上传到暂存区(临时存储)
+                      如果是新建文件则必须使用一次 该命令 ,然后才可以直接使用 git commit 来更新
+
+git config user.name <名字>     初始化作者信息和签名,项目级别.
+git config user.email <你的邮箱>
+
+git config --global user.name <名字>       初始化当前操作系统用户范围.系统环境变量级别.
+git config --giobal user.email  <你的邮箱>
+
+git status        查看工作区和暂存区状态.会反馈一些重要信息:
+                       // on branch master       在 master(主干) 的分支上.
+                       // No commits yet           现在还没有任何的提交(就是本地库里什么都没有).
+
+                       // noting to commit ( create/copy files and use "git add" to track)
+                       // 有没有什么可提交的(暂存区里面什么都没有).你可以使用"git add "命令来追踪和管理文件.
+
+                       // Changes to be committed:(use "git rm --cached <file> ..." to unstage).
+                       // 要被提交的改变<file>.如果你想把已追踪的文件从暂存区删除 则使用 git rm -cached <file> 命令,(当然源文件不会被删除,只是暂存区的被删除了).
+                      
+
+                      //  nothing to commit, working tree clean
+                           没有什么可做的，工作的树很干净
+
+git rm -cached <file>  会把文件从暂存区清除.
+
+git commit  <file>   从暂存区上传到本地库(里面拥有历史版本).会弹出一个备注文档界面.
+                               相当于写代码的一个 注释.记录一下是要干什么.
+git commit -m "写入注释" <file>   可以实现同样的功能,只不过不会打开备注文档.
+
+
+git log         查看版本记录,会返回已提交的哈希值的索引.Author:作者,Date : 提交的日期
+                (按空格向下翻页,按 b 向上翻页, 按 q 退出).
+                 HEAD 指针 指向你现在所在的版本位置.
+
+git log --pretty=oneline   只显示一行信息,哈希值和备注和 HEAD指针.显示的很简洁.<基本不用>
+
+git log --oneline   只显示一行信息,索引值了备注和 HEAD 指针.但是只显示目前版本后面的版本.前面不显示.
+                    <基本不用>
+
+git reflog       显示版本历史,以及要移动到某项版本需要移动几步.
+                   HEAD@{移动到当前版本需要多少步}
+
+
+git reset --hard <索引值>     使用索引值操作移动 HEAD指针.到达某个版本
+                             在本地库移动 HEAD 指针,重置暂存区, 重置工作区.
+
+git reset --hard HEAD^   使用^ 操作指针指向的版本. 一个^ 表示回到上一个版本.<基本不用>
+
+git reset --hard HEAD~<数字>  使用~ 操作指针版本, 数字填多少就是回到第多少个版本.<基本不用>
+
+git reset --soft <索引值>    仅仅在本地库移动 HEAD 指针,不会修改暂存区和工作区.<基本不用>
+
+git reset --mixed <索引值>   在本地库移动 HEAD 指针,重置暂存区, 不会修改工作区.<基本不用>
+
+
+
+
+

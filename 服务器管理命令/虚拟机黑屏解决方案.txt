@@ -1,0 +1,4 @@
+﻿netsh  winsock  reset
+//管理员命令
+
+主要是加速器改写了网络参数

@@ -1,0 +1,40 @@
+下载文件夹
+
+scp -r root@110.255.255.52:/root/htmltitle （远程目录） 『空格』/Users/xxx/Desktop (本地目录)
+
+
+下载文件
+
+scp root@110.255.250.52 :/root/htmltitle/htmltitle.html （远程目录） 『空格』 /Users/xxx/Desktop
+
+
+上传文件『到文件夹下』
+
+1 . 打开终端， 进入上传文件的目录。
+
+输入下面的命令
+scp -r htmltitle.cpp(文件名) root@139.59.250.52:/root/htmltitle
+
+详细格式：
+
+下载文件夹
+
+scp -r 远程登录服务器用户名@远程服务器ip地址:/下载文件夹的目录 本地目录
+
+
+下载文件
+
+scp 远程登录服务器用户名@远程服务器ip地址:/下载文件的目录 本地目录
+
+上传文件『到文件夹下』
+
+
+1 . 打开终端， 进入上传文件的目录。
+
+输入下面的命令
+scp -r 本地目录 远程登录服务器用户名@远程服务器ip地址:/文件上传的目录地址
+--------------------- 
+作者：zhangyu4863 
+来源：CSDN 
+原文：https://blog.csdn.net/zhangyu4863/article/details/82733086 
+版权声明：本文为博主原创文章，转载请附上博文链接！

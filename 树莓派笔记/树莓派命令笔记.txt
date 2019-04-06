@@ -1,0 +1,480 @@
+﻿首先开机之后进行登录
+账号 pi   密码  raspberry    (这些都是官方默认的)
+
+然后修改密码: sudo raspi-config
+
+会打开一个界面
+选择第一个进行修改密码 .
+紧接着选择 7 Advanced Options   ,然后再选择 Expand Filesystem   来把内存卡空间都分配了
+然后必须重启,不要做任何修改了.
+
+
+重启后再次输入命令 sudo raspi-config 修改以下各个选项
+
+
+第二步:(修改时区)
+选择 4 Localisation Options   然后选择第二个 I2 Change Timezone .
+然后选择 Asia  回车后 在下一个界面中找到 Shanghai 就再次回车就可以了.
+
+
+第三步:(修改键盘)
+选择 4 Localisation Options   然后选择第三个 I3 Change Keyboard Layout .
+选择紧挨着上面的选项 104 按键的, 然后再次点击最下面的 Options ,然后找到 US English .就可以了
+
+第四步:(修改wifi地区)
+选择 4 Localisation Options   然后选择第四个 I4 Change Wi-fi Country .
+找到 CN China  回车就好了.
+
+
+第五步:(开启ssh 远程登录和控制)
+选择 5 Interfacing Options   , 然后选择 SSH   回车  然后选择 yes 回车就可以了.
+这个界面的选项有很多 随便开吧.(VNC 的话可能需要下载软件包,先别打开等换完源的).
+
+
+第六步:
+上面都完成后 , 重启: sudo shutdown -r now
+
+
+第七步:(wifi) (如果在 ifconfig 中没有看到网卡的话就进入 第七步-续)
+
+
+###  三#部分抛弃不设置!!!!!!!!!!!!!!!!!!!!!
+###  修改配置文件 sudo vi /etc/network/interfaces 文件,(先备份).
+###  该配置文件中的默认内容可能会和下面相似.
+### 
+###  iface wlan0 inet manual
+###  wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+### 
+### 
+###  我要做的是把上面的两行替换成:(也可能没有上面的两行,那么就直接把下面的东西写上去就好了)
+### 
+###  iface wlan0 inet dhcp
+###  wpa_conf /etc/wpa_supplicant/wpa_supplicant.conf
+### 
+### 
+###   (如果不使用网线连接的话那么进行下一步,否则忽略)
+###  {       最好把  /etc/network/interfaces  文件第一行
+###     （也可能不在第一行）中 auto lo eth0 wlan0 的 eth0 删掉。
+###  }
+### 
+###  除  /etc/network/interfaces  之外，你还需要修改 /etc/wpa_supplicant/wpa_supplicant.conf  。
+###  所有的WiFi连接配置都在这里了。
+
+
+
+打开  /etc/wpa_supplicant/wpa_supplicant.conf  照着下面的样子添加（
+请不要删除原先就已经存在的任何行）：
+
+# 最常用的配置。WPA-PSK 加密方式。
+network={
+ssid="WiFi-name1"
+psk="WiFi-password1"
+priority=5
+}
+ 
+network={
+ssid="WiFi-name2"
+psk="WiFi-password2"
+priority=4
+}
+
+
+priority 是指连接优先级，数字越大优先级越高（不可以是负数）。
+按照自己的实际情况，修改这个文件。
+
+连接WiFi  :  sudo ifup wlan0     (wlan0  是网卡名 使用 ifconfig 来查看和替换)
+测试WiFI是否开启: sudo  iwlist wlan0 scan     (会扫描出所有的wifi)
+断开WiFi  :  sudo ifdown wlan0
+
+
+第一步:(修改编码)
+选择 4 Localisation Options   然后选择第一个 I1 Change Locale .
+然后快速寻找到 en_US.UTF8 , zh_CN GB2312 , zh_CN.GB18030 , zh_CH.GBK , zh_CN.UTF8 
+    挨个按空格,让这些选项前面出现 * 号,  然后再次找到 en_GB.UTF-8 取消掉他前面的*.
+    然后按回车来进行到下一步, 在随后的界面中选择 zh_CN.UTF8 来回车, 随后会等待一会,就设置完成了.
+    
+
+-----------
+
+第七步-续(硬改配置文件)
+1.使用nmcli con show命令，查看网卡的UUID信息，记下UUID值
+2.使用ip addr命令查看网卡信息，记下ens37网卡的MAC地址
+3.将 /etc/sysconfig/network-scripts/目录中ifcfg-ens33文件复制一份，并命名为 ifcfg-ens37，重新修改配置文件，
+    注意修改必要的硬件信息
+
+4.最后重新启动网卡即可。 pi addr
+https://www.linuxidc.com/Linux/2018-03/151548.htm    详细步骤网址
+
+
+------------
+
+更换为国内源:
+1.首先确定自己的版本是stretch还是jessis
+例如：你下载的2017-11-29-raspbian-stretch.zip， 那么就是stretch
+       
+例如：执行命令：
+   lsb_release -a 查看自己的版本类型
+2-1.执行命令:(stretch)
+   sudo   vi  /etc/apt/sources.list 
+   （1）将文件里的默认的官方软件源用# 注释掉 
+   （2）添加下面的软件源（中国科技大学的软件源 ） （手动添加注意空格）
+deb http://mirrors.aliyun.com/raspbian/raspbian/ stretch main contrib non-free rpi
+
+
+
+执行命令:(stretch)
+sudo  vi  /etc/apt/sources.list.d/raspi.list 
+
+（1）将文件里的默认的官方软件源用# 注释掉 
+   （2）添加下面的软件源（中国科技大学的软件源 )（手动添加注意空格）
+deb http://mirrors.ustc.edu.cn/archive.raspberrypi.org/debian/ stretch main ui
+
+
+3.更新
+     sudo apt-get update 
+     sudo apt-get upgrade 
+     sudo aptitude update
+  
+-----------
+安装vim 要注意,先进行卸载 sudo aptitude remove vim  ,和 sudo aptitude remove vi  .
+执行完成后再次 进行安装vim 命令 sudo apt-get install vim
+-----------
+ 
+---------
+ 树莓派显示中文 以及解决中文乱码:
+1 sudo apt-get install ttf-wqy-zenhei
+安装过程中如果碰到(Y/n)，都选择y
+中文字库安装完成之后，还需要安装一个中文输入法。输入如下命令
+2 sudo apt-get install scim-pinyin
+一样的安装过程，安装完毕后输入
+3 sudo raspi-config
+然后选择change_locale，在Default locale for the system environment:中选择zh_CN.UTF-8,
+配置完成之后，输入命令
+4 sudo reboot
+
+
+-----------
+树莓派安装samba(文件共享)
+
+1.树莓派安装samba
+sudo apt-get update
+sudo apt-get install samba sam*
+
+
+2.设置一个公共目录
+
+sudo mkdir Note;
+sudo chmod -R 777 Note
+
+
+打开配置文件
+sudo vim /etc/samba/smb.conf
+配置每个用户可以读写自己的 home 目录，在“[homes]”节中，
+把 “read only = yes” 改为 “read only = no”。
+
+在文件最后添加：
+[pi]
+comment = pi
+path = /home/pi
+browseable = yes
+read only = no
+guest ok = yes
+
+
+3.重启samba服务
+sudo /etc/init.d/samba restart
+
+
+4.添加默认用户pi到samba
+sudo smbpasswd -a pi
+
+输入密码确定即可。
+
+5.访问树莓派文件
+
+    使用文件浏览器打开ip地址\\192.168.1.110\pi (ip地址改为树莓派IP地址)，
+    输入用户密码，则可以访问树莓派home目录
+
+    也可以映射网络驱动器 \\192.168.1.110\pi
+    使用浏览器打开 file://192.168.1.110/pi/
+    
+    
+-----------
+树莓派安装samba时出错的解决办法:
+
+
+我们需要先卸载:(有可能还需要换国内源)
+
+sudo apt-get update
+
+sudo apt-get remove samba-common  
+
+sudo apt-get remove libwbclient0
+
+sudo apt-get install samba
+
+sudo apt-get install samba-common-bin
+
+----------------------------------------
+
+
+
+进入树莓派终端控制台，依次输入以下指令获取实时温度值：
+
+#进入根目录
+
+   cd /
+
+#读取temp文件，获得温度值
+
+   cat sys/class/thermal/thermal_zone0/temp
+
+#系统返回实时值
+
+   40622
+
+[说明]
+
+      1）通过cat命令读取存放在sys/class/thermal/thermal_zone0目录下的温度文件temp获得返回值
+
+      2）返回值为一个5位数的数值，实际温度为将该值除以1000即可！单位为摄氏度！
+
+      
+      
+      
+------------------------------------------------------------------------------------------------
+
+aptitude 与 apt-get 一样，是 Debian 及其衍生系统中功能极其强大的包管理工具。与 apt-get 不同的是
+，aptitude 在处理依赖问题上更佳一些。举例来说，aptitude 在删除一个包时，会同时删除本身所依赖的包。
+这样，系统中不会残留无用的包，整个系统更为干净。以下是笔者总结的一些常用 aptitude 命令，仅供参考。
+
+aptitude update 更新可用的包列表
+aptitude upgrade 升级可用的包
+aptitude dist-upgrade 将系统升级到新的发行版
+aptitude install pkgname 安装包
+aptitude remove pkgname 删除包
+aptitude purge pkgname 删除包及其配置文件
+aptitude search string 搜索包
+aptitude show pkgname 显示包的详细信息
+aptitude clean 删除下载的包文件
+aptitude autoclean 仅删除过期的包文件
+
+当然，你也可以在文本界面模式中使用 aptitude。
+
+
+常用apt命令列表:
+
+apt-cache search # ------(package 搜索包)
+apt-cache show #------(package 获取包的相关信息，如说明、大小、版本等)
+sudo apt-get install # ------(package 安装包)
+sudo apt-get install # -----(package - - reinstall 重新安装包)
+sudo apt-get -f install # -----(强制安装?#"-f = --fix-missing"当是修复安装吧...)
+sudo apt-get remove #-----(package 删除包)
+sudo apt-get remove - - purge # ------(package 删除包，包括删除配置文件等)
+sudo apt-get autoremove --purge # ----(package 删除包及其依赖的软件包+配置文件等（只对6.10有效，强烈推荐）)
+sudo apt-get update #------更新源
+sudo apt-get upgrade #------更新已安装的包
+sudo apt-get dist-upgrade # ---------升级系统
+sudo apt-get dselect-upgrade #------使用 dselect 升级
+apt-cache depends #-------(package 了解使用依赖)
+apt-cache rdepends # ------(package 了解某个具体的依赖?#当是查看该包被哪些包依赖吧...)
+sudo apt-get build-dep # ------(package 安装相关的编译环境)
+apt-get source #------(package 下载该包的源代码)
+sudo apt-get clean && sudo apt-get autoclean # --------清理下载文件的存档 && 只清理过时的包
+sudo apt-get check #-------检查是否有损坏的依赖
+
+
+--------------------------------------------------------------------------------------------------------
+
+
+
+
+
+备份系统 https://blog.csdn.net/j326214730/article/details/82144869
+需要最新版的 DiskGenius 软件来实现
+
+
+最近使用树莓派做一个智能硬件设备，其中修改了很多软件包的配置，为了方便备份，
+所以想使用磁盘镜像克隆的方式备份当前系统的tf卡。最初是使用 WinHex创建整个tf卡的磁盘镜像，
+这个方法用了一段时间，但实在忍受不了整盘克隆比蜗牛还慢的速度，所以开始寻求新的方法。
+
+搜了一圈，发现一些前辈在linux环境下通过dump命令与restore命令创建img镜像，效果貌似很不错，
+因为只会备份已存在的文件，不会备份无数据扇区，所以速度很快。
+
+但对于我这等懒人，不到万不得已，实在不想使用linux的命令行界面来做这些事情,
+（其实我懒得装linux虚拟机，233）~于是再仔细阅读了前辈们的文章后，了解了他们的思路 ，
+我开始在windows环境下寻找方法。此时我突然想起了磁盘分区软件DiskGenius具备创建img的功能，
+于是决定就用它了！
+
+
+首先把当前要备份的tf卡插到电脑上，打开DiskGenius。点击硬盘->新建虚拟硬盘文件->新建.img映像文件，
+( 选择个文件夹位置,准备在该位置创建img镜像, 名称随便.不要有中文最好_).
+
+
+在创建映像文件对话框中，根据你tf卡的使用情况，创建大小合适的img映像，映像类型 选择磁盘映像
+(使用多少的内存卡空间就把这个数值乘以1.3在创建)
+
+点击确定等待映像创建。当创建成功后，左侧会显示img映像文件。接下来我们需要对img进行分区。
+首先删除当前分区，右键点击分区，选择删除当前分区。
+
+
+之后查看一下tf卡的boot分区格式，右键点击tf卡的PI_BOOT分区，选择更改分区参数，
+在对话框中记下当前的分区参数，然后关掉。在img镜像中建立新分区，参数按照刚才查的boot分区参数来。
+
+boot(例子,我曾经做过的一个备份)32g内存卡,使用了48mb
+0C: FAT32   文件系统标识
+0	6	柱面起始
+130	23	起始磁头
+3	51	起始扇区
+
+root(例子,我曾经做过的一个备份) 32g内存卡,使用了1.7g
+83         文件系统标识
+6	3880 柱面起始
+30	27   起始磁头
+25	51   起始扇区
+
+
+建立完boot分区后，再建立root分区，root分区直接按照默认参数建立即可，无需配置。
+
+接下来最重要的事就是克隆分区了。右键点击tf卡的boot分区，选择克隆分区，
+然后目标选择img镜像中刚刚建立的boot小分区，选择按文件复制，点击开始，等待读条完成。
+然后再克隆root分区，如法炮制。最后克隆完成后，img镜像就做好啦~！
+
+ 
+做好img镜像后，进行克隆试验。准备一张新的卡，我使用Win32DiskImager了来做这个事，将镜像克隆到存储卡中，
+然后插入到树莓派进行启动测试。
+
+启动进入系统后，会发现根目录分区容量很小，所以接下来要做的事情就是将根目录分区容量扩充到整个tf卡。
+
+执行sudo raspi-config ，在advance选项中选择Expand Filesystem执行，重启后，执行df -h 命令，
+就会发现根目录分区容量正确了。到此为止克隆结束！
+
+
+
+
+
+
+Linux查看系统信息的一些命令及查看已安装软件包的命令
+
+
+系统
+
+# uname -a               # 查看内核/操作系统/CPU信息
+# head -n 1 /etc/issue   # 查看操作系统版本
+# cat /proc/cpuinfo      # 查看CPU信息
+# hostname               # 查看计算机名
+# lspci -tv              # 列出所有PCI设备
+# lsusb -tv              # 列出所有USB设备
+# lsmod                  # 列出加载的内核模块
+# env                    # 查看环境变量
+资源
+
+# free -m                # 查看内存使用量和交换区使用量
+# df -h                  # 查看各分区使用情况
+# du -sh <目录名>        # 查看指定目录的大小
+# grep MemTotal /proc/meminfo   # 查看内存总量
+# grep MemFree /proc/meminfo    # 查看空闲内存量
+# uptime                 # 查看系统运行时间、用户数、负载
+# cat /proc/loadavg      # 查看系统负载
+磁盘和分区
+
+# mount | column -t      # 查看挂接的分区状态
+# fdisk -l               # 查看所有分区
+# swapon -s              # 查看所有交换分区
+# hdparm -i /dev/hda     # 查看磁盘参数(仅适用于IDE设备)
+# dmesg | grep IDE       # 查看启动时IDE设备检测状况
+网络
+
+# ifconfig               # 查看所有网络接口的属性
+# iptables -L            # 查看防火墙设置
+# route -n               # 查看路由表
+# netstat -lntp          # 查看所有监听端口
+# netstat -antp          # 查看所有已经建立的连接
+# netstat -s             # 查看网络统计信息
+进程
+
+# ps -ef                 # 查看所有进程
+# top                    # 实时显示进程状态
+用户
+
+# w                      # 查看活动用户
+# id <用户名>            # 查看指定用户信息
+# last                   # 查看用户登录日志
+# cut -d: -f1 /etc/passwd   # 查看系统所有用户
+# cut -d: -f1 /etc/group    # 查看系统所有组
+# crontab -l             # 查看当前用户的计划任务
+服务
+
+# chkconfig --list       # 列出所有系统服务
+# chkconfig --list | grep on    # 列出所有启动的系统服务
+程序
+
+# rpm -qa                # 查看所有安装的软件包
+ 
+
+ 
+
+RPM
+
+    在Linux 操作系统中，有一个系统软件包，它的功能类似于Windows里面的“添加/删除程序”，但是功能又比“添加/删除程序”强很多，它就是 Red Hat Package Manager(简称RPM)。此工具包最先是由Red Hat公司推出的，后来被其他Linux开发商所借用。由于它为Linux使用者省去了很多时间，所以被广泛应用于在Linux下安装、删除软件。下面就 给大家介绍一下它的具体使用方法。
+
+1.我们得到一个新软件，在安装之前，一般都要先查看一下这个软件包里有什么内容，假设这个文件是：Linux-1.4-6.i368.rpm，我们可以用这条命令查看：
+
+rpm -qpi Linux-1.4-6.i368.rpm
+
+系统将会列出这个软件包的详细资料，包括含有多少个文件、各文件名称、文件大小、创建时间、编译日期等信息。
+
+2.上面列出的所有文件在安装时不一定全部安装，就像Windows下程序的安装方式分为典型、完全、自定义一样，Linux也会让你选择安装方式，此时我们可以用下面这条命令查看软件包将会在系统里安装哪些部分，以方便我们的选择：
+
+rpm -qpl Linux-1.4-6.i368.rpm
+
+3. 选择安装方式后，开始安装。我们可以用rpm-ivh Linux-1.4-6.i368.rpm命令安装此软件。在安装过程中，若系统提示此软件已安装过或因其他原因无法继续安装，但若我们确实想执行安装命 令，可以在 -ivh后加一参数“-replacepkgs”：
+
+rpm -ivh -replacepkgs Linux-1.4-6.i368.rpm
+
+4.有时我们卸载某个安装过的软件，只需执行rpm-e <文件名>;命令即可。
+
+5.对低版本软件进行升级是提高其功能的好办法，这样可以省去我们卸载后再安装新软件的麻烦，要升级某个软件，只须执行如下命令：rpm -uvh <文件名>;，注意：此时的文件名必须是要升级软件的升级补丁
+
+6. 另外一个安装软件的方法可谓是Linux的独到之处，同时也是RMP强大功能的一个表现：通过FTP站点直接在线安装软件。当找到含有你所需软件的站点并 与此网站连接后，执行下面的命令即可实现在线安装，譬如在线安装Linux-1.4-6.i368.rpm，可以用命令：
+
+rpm -i ftp://ftp.pht.com/pub/linux/redhat/...-1.4-6.i368.rpm
+
+7. 在我们使用电脑过程中，难免会有误操作，若我们误删了几个文件而影响了系统的性能时，怎样查找到底少了哪些文件呢?RPM软件包提供了一个查找损坏文件的 功能，执行此命令：rpm -Va即可，Linux将为你列出所有损坏的文件。你可以通过Linux的安装光盘进行修复。
+
+8.Linux系统中文件繁多，在使用过程中，难免会碰到我们不认识的文件，在Windows下我们可以用“开始/查找”菜单快速判断某个文件属于哪个文件夹，在Linux中，下面这条命令行可以帮助我们快速判定某个文件属于哪个软件包：
+
+rpm -qf <文件名>;
+
+9.当每个软件包安装在Linux系统后，安装文件都会到RPM数据库中“报到”，所以，我们要查询某个已安装软件的属性时，只需到此数据库中查找即可。注意：此时的查询命令不同于1和8介绍的查询，这种方法只适用于已安装过的软件包！命令格式：
+
+rpm -参数　<文件名>;
+
+ 
+
+APT-GET
+
+apt-get update——在修改/etc/apt/sources.list或者/etc/apt/preferences之后运行该命令。此外您需要定期运行这一命令以确保您的软件包列表是最新的。 
+apt-get install packagename——安装一个新软件包（参见下文的aptitude） 
+apt-get remove packagename——卸载一个已安装的软件包（保留配置文件） 
+apt-get --purge remove packagename——卸载一个已安装的软件包（删除配置文件） 
+dpkg --force-all --purge packagename 有些软件很难卸载，而且还阻止了别的软件的应用，就可以用这个，不过有点冒险。 
+apt-get autoclean apt会把已装或已卸的软件都备份在硬盘上，所以如果需要空间的话，可以让这个命令来删除你已经删掉的软件 
+apt-get clean 这个命令会把安装的软件的备份也删除，不过这样不会影响软件的使用的。 
+apt-get upgrade——更新所有已安装的软件包 
+apt-get dist-upgrade——将系统升级到新版本 
+apt-cache search string——在软件包列表中搜索字符串 
+dpkg -l package-name-pattern——列出所有与模式相匹配的软件包。如果您不知道软件包的全名，您可以使用“*package-name-pattern*”。 
+aptitude——详细查看已安装或可用的软件包。与apt-get类似，aptitude可以通过命令行方式调用，但仅限于某些命令——最常见的有安装和卸载命令。由于aptitude比apt-get了解更多信息，可以说它更适合用来进行安装和卸载。 
+apt-cache showpkg pkgs——显示软件包信息。 
+apt-cache dumpavail——打印可用软件包列表。 
+apt-cache show pkgs——显示软件包记录，类似于dpkg –print-avail。 
+apt-cache pkgnames——打印软件包列表中所有软件包的名称。 
+dpkg -S file——这个文件属于哪个已安装软件包。 
+dpkg -L package——列出软件包中的所有文件。 
+apt-file search filename——查找包含特定文件的软件包（不一定是已安装的），这些文件的文件名中含有指定的字符串。
+
+apt-file是一个独立的软件包。您必须 先使用apt-get install来安装它，然后运行apt-file update。如果apt-file search filename输出的内容太多，
+     您可以尝试使用apt-file search filename | grep -w filename（只显示指定字符串作为完整的单词出现在其中的那些文件名）或者类似方法，
+    例如：apt-file search filename | grep /bin/（只显示位于诸如/bin或/usr/bin这些文件夹中的文件，如果您要查找的是某个特定的执行文件的话，
+    这样做是有帮助的）。

@@ -1,0 +1,851 @@
+getsid(),  setsid(),  umask(),  pthread_create()
+
+pthread_create() , pthread_self() , strerror() , pthread_exit(), pthread_join(), ptherad_detach()
+pthread_cancel(),  pthread_attr_init(), ptherad_attr_setdetachstate(), pthread_attr_destroy()
+
+pthread_mutex_init() , pthread_mutex_unlock(), pthread_mutex_lock(), pthread_mutex_trylock(),
+pthread_mutex_destroy() 
+
+pthread_attr_destroy(), pthread_attr_setdetachstate()
+
+pthread_rwlock_init(), pthread_rwlock_unlock(), pthread_rwlock_rdlock(), pthread_rwlock_wrlock(),
+pthread_rwlock_trywrlock(), pthread_rwlock_tryrdlock(), pthread_rwlock_wrlock(),
+pthread_rwlock_rdlock(), pthread_rwlock_init(), pthread_rwlock_unlock()
+
+pthread_cond_init(), pthread_cond_destroy(), pthread_cond_wait(), pthread_cond_signal(), 
+pthread_cond_broadcast(), pthread_cond_timedwait()
+
+sem_init(), sem_destroy(), sem_wait(), sem_trywait(), sem_timedwait(), sem_post()
+
+<unistd.h> , <pthread.h> , <semaphore.h> 
+
+
+
+守护进程(一般称为服务)的特点:
+    后台服务进程. 不需要和它进行交互.
+    独立于控制终端. 不需要终端. 变成会长, 脱离终端, 守护进程.
+    周期性执行某任务. 执行某个特定操作,行为单一,不会很复杂. 一般为其他进程提供相应的服务.
+    不受用户登陆注销影响.
+    一般采用以 d 结尾的名字(服务).
+
+
+进程组
+   进程的组长:
+        组内的第一个进程 就是组长.
+        进程组ID == 进程组的组长的ID .
+
+会话 - 多个进程组
+    创建一个会话注意事项:
+        已经是一个进程组的组长是绝对不能创建会话. 也就是父进程不可以创建会话,但是子进程可以.
+        创建会话的进程 将成为新进程组的组长.
+        有些linux 版本系统 需要使用 root 权限来执行此操作.
+        创建出的新会话 会丢弃原有的控制终端.
+        会话 不受用户登陆注销影响, 除非关机和手动杀死进程才行.
+        一般步骤: 先fork(), 然后父进程死, 最后子进程执行创建会话操作(setsid).
+    
+    获得进程所属的会话ID:
+        pid_t getsid(pid_t pid);
+
+    创建一个会话:
+        pid_t setsid(void);
+
+创建守护进程模型  (让一个没有任何职务的一个进程去调用 setsid ,这样守护进程就出来了)
+    1. fork 子进程, 然后父进程退出.  这一步必须做
+    2. 子进程创建新会话             这一步必须做. setsid()
+    3. 改变当前工作目录             这步尽量写, 但不是必须的. 增加程序健壮性 , chdir()
+    4. 重置文件掩码                这步尽量写. 增加程序的灵活性. 避免缺少某种文件权限.毕竟是从父进程继承来的.umask(0)
+    5. 关闭文件描述符              这步尽量写. 因为不需要终端,所以关闭0 1 2 文件描述符. 释放核心资源.
+    6. 执行核心工作                这一步必须做.
+
+
+-----------------------------------------------------------------------
+
+守护进程范例:   每2秒向time.txt 文件写入当前时间.  Fri jan 25 12:02:44 2019
+            其中包括 : 获取当前时间, 时间格式化输出 ,打开文件和写入文件, 定时器, 信号捕捉, 信号处理, 文件描述符操作.
+
+
+void dowork(int on){
+    // 得到当前的时间  / 将时间写入文件
+    time_t curtime;
+    time(&curtime);
+    // 将时间格式化
+    char* pt = ctime(&curtime);
+    //将时间写入文件
+    int fd = open("/Users/ns/temp/time.txt",O_RDWR| O_APPEND);
+    write(fd, pt, strlen(pt)+1);
+    close(fd);
+}
+
+
+int main(int argc, char* argv[]){
+    pid_t pid = fork();
+    if(pid > 0){
+        exit(0);
+
+    }else if(pid == 0){
+        setsid();
+        chdir("/Users/ns/temp");  // 修改目录
+        umask(0);   // 重置文件掩码
+
+        close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+        // 关闭无用的文件描述符
+
+        // 保证程序处于运行状态.
+        
+        // 核心操作
+        // 注册信号捕捉
+        struct sigaction act;
+        act.sa_flags = 0;
+        act.sa_handler = dowork;
+        sigemptyset(&act.sa_mask);
+        sigaction(SIGALRM, &act, NULL);
+        
+        struct itimerval val;
+        
+        // 循环触发时间间隔设定
+        val.it_value.tv_usec= 0;
+        val.it_value.tv_sec = 2;
+        
+        //第一次触发时间设定
+        val.it_interval.tv_usec = 0;
+        val.it_interval.tv_sec = 1;
+
+        // 定时器完成
+        setitimer(ITIMER_REAL, &val,NULL);
+        
+
+        while(1);
+
+    }else{
+        perror("fork error");
+        exit(1);
+    }
+
+
+    return 0;
+}
+
+-----------------------------------------------------------------------
+
+
+
+
+
+
+-----------------------------------------------------------------------
+
+
+线程相关概念
+    - 自行安装线程 man page, 命令
+       sudo apt-get install manpages-posix-dev
+
+    - 查看指定线程的 LWP 号 
+        线程号和线程ID 是有区别的.
+        线程号是给内核看的.
+        查看方式
+            找到程序的进程ID (首先要找到进程的pid, 然后把下面的pid 替换)
+            ps -Lf pid     
+
+
+线程 : (一个单独的进程可以看作是一个 单独的一个线程)
+    创建线程之后, 地址空间没有变化.
+    进程退化成了线程 - 主线程.
+    创建出的子线程 和主线程 共用地址空间.(但是每个线程之间的栈空间地址是独立的,不相同,不相通,其他的相通)
+    父线程结束后,如果子线程没有设置分离,那么他也会跟着结束.(如果分离了,那么就不会影响到子线程).
+    主线程和子线程都有各自独立的pcb.
+        - 子线程的 pcb 是从主线程拷贝来的.
+
+主线程和子线程共享的内容:
+    .text  ,  .bss  ,  .data  ,  堆区  ,  动态库加载区  ,  环境变量  ,  命令行参数  
+    - 主线程和子进程之间通信是靠 全局变量 和 堆.
+
+不共享的内容:
+    栈区  ,  栈区内存储的数据的地址  (每个线程都是独立的)
+    如果一个进程有5个线程, 那么栈区会被平均分为5份.
+
+
+多线程和多进程的区别:
+    多进程:
+        始终共享的资源 : 代码.  文件描述符.  内存映射区--mmap  , 可以通过这些内容实现多个进程间的通信
+    多线程:
+        堆 , 全局变量  
+        线程比进程更加节省资源. 而且也不会减少抢到cpu 的时间碎片个数.  (内核和Cpu 只认pcb无论进程和线程)
+
+
+
+ 
+! 注意事项:
+    多线程传参数时,绝对不要使用栈区的内容,一定要使用堆上的内容,因为每个线程的栈区地址不相同.每个线程都是独有的栈区.
+    父线程要回收没有分离的子线程的pcb.
+
+
+在Linux 下 
+    线程就是进程 - 轻量级的进程. 
+    对于内核来说, 线程就是进城,  (毕竟是使用进程当模型,修改出来的一个类似进程的版本)
+    在底层实现上和 windows 是有本质的区别的. 千万不要混为一谈.
+
+在windows 下, 
+    线程就是线程, 进程就是进程, 线程的CPU使用率比进程高, 所以大部分都是用线程.
+
+
+
+
+
+-----------------------------------------------------------------------
+
+
+<pthread.h>
+相同点: 函数调用成功返回0 , 失败返回错误号.(和 errno 没关系 ,不能使用perror来打印错误信息)
+        如果父线程比子线程提前结束,那么子线程会被直接结束, 因为他们使用的是同一个pid.
+        子线程只会执行参数内的函数, 不会向下执行,不会回到创建出他的位置.
+
+创建线程函数原型: 
+    int pthread_create( 
+            pthread_t* pthread,      // 线程ID = 无符号长整型  pthread_t
+            const pthread_attr_t* attr,     // 线程属性 ,NULL
+            void* (*start_routine)(void*),  // 线程处理函数
+            void* arg           // 线程处理函数参数
+            );
+    参数:
+        thread:  传出参数, 线程创建成功之后,会被设置一个合适的值
+        a ttr  :  默认传NULL,  也可以传递进程分离参数 ,但是需要自己定义一个,然后使用函数初始化在传递过来.
+        start_routine :  子进程的处理函数
+        arg  :  回调函数的参数 (小心地址传递和值传递,有必要的话 可以上锁).
+    返回值:
+        成功返回0 ,失败返回错误号.(这是进程独有的错误号,不能和其他标准库的混为一谈)
+    范例: 
+        void* myfunc(void* no){  
+            printf("当前线程的 线程ID %ld \n, 传入参数 %d \n", pthread_self(), *a);
+        /*自定义回调函数, 这里的内容省略 */ 
+        }
+
+        pthread_t pthid;
+        int* a = 10;
+        int ret = pthread_create(&pthid, NULL, myfunc, (void*)a);
+        if(ret != 0 ){
+            printf("error number %d , : %s",ret , strerror(ret));
+        }
+
+
+---------------
+获得当前线程的ID号:
+    函数原型:  unsigned int pthread_self(void);
+        返回值 : 是一个无符号类型, 使用%ld 或 %lu 来输出. 返回当前线程的id 号.
+
+
+----------------
+<string.h>
+<stdio.h>
+获得当前线程返回值的错误号和输出错误信息:
+    因为 pthread_create() 函数返回的是错误号,而且不能是perror来打印错误信息.
+    函数原型:   
+        char* strerror(int errnum);
+            errnum 参数:  他接受错误码,然后读取这个错误码,输出错误码信息.
+
+            返回值:  就是错误码对应的信息.
+
+    如果想获得进程的错误信息, 那么必须使用这个函数, 其他的都不行.
+
+
+----------------
+单个线程退出,而且不影响其他线程的函数   pthread_exit
+    函数原型: void pthread_exit(void *retval);
+                retval  参数: 可以NULL, 也可以给主线程返回一个信息. 但是主线程需要使用pthread_join来接受.
+                                但是需要注意返回值必须是 堆 或全局变量 ,需要保证数据还存在.
+
+            结束一个线程, 但是无法释放自己的pcb .需要父线程来释放. 而且该线程退出后,它本身的栈区就会被销毁.
+
+
+----------------
+回收子线程资源 阻塞等待线程退出, 获取线程退出状态(如果是线程分离,那么就不能使用这个函数了) -- pthread_join
+    函数原型: int pthread_join(pthread_t thread, void** retval);
+
+                thread  参数: 要回收的子线程的线程id
+                retval  参数: 读取线程退出的时候携带的状态信息. 
+                                是一个传出参数.
+                                和exit中的参数指向内存地址相同.
+                返回值:  如果成功返回 0 ;
+                        如果失败返回 返回错误编号, 需要使用 strerror 来读取.
+
+            这个函数会阻塞主线程, 直到子线程结束.
+
+                范例:  void* ptr;     // 用来存放退出线程所携带的信息
+                       pthread_join(pthread,&ptr);   // 阻塞主线程,等待子线程退出 ,然后把信息写入 ptr
+
+
+----------------
+线程分离 (一旦设置了线程分离, 那么它就会自动回收子线程的pcb) -- pthread_detach
+    函数原型:  int ptherad_detach(pthread_t pthread);
+
+                pthread 参数 : 需要分离的线程ID
+
+        分离之后,子线程会自己回收本身的pcb, 不需要父进程的参与回收.
+
+
+    直接设置线程分离的例子:
+        pthread_t pthid;
+        pthread_create(pthid, NULL, myfunc, NULL);
+        ptherad_detach(pthid);
+        // 完成 线程分离了 , 不需要设置属性
+
+---------------
+杀死(取消)线程 -- ptherad_cancel
+    函数原型: int pthread_cancel(pthread_t thread);
+
+                pthread 参数: 需要杀死的线程ID
+        注意事项:
+            再要杀死的子线程对应的处理函数的内部,必须做一次系统调用(printf,read,write,都会进行系统调用).
+            如果实在不确定子线程有没有调用系统函数. 那么设置一个 ptherad_testcancel(); 这个函数也可以.
+            这个函数没有任何意义,就是为了插入一个断点,让父线程可以杀掉这个子线程的一个位置.
+
+
+---------------
+
+
+线程属性:  ( 这种设置 一般用在创建线程之前,然后使用这个设置去创建线程 )
+    通过线程属性设置线程的分离:
+        线程属性类型 : ptherad_attr_t attr;  // 这种设置的好处显而易见, 子线程可以独立释放pcb ,防止僵尸进程.
+
+        线程属性操作函数:
+            对线程属性变量的初始化
+                int pthread_attr_init(pthread_attr_t* attr);
+
+            设置线程分离属性
+                int ptherad_attr_setdetachstate( pthread_attr_t* attr, int detachstate);
+                    参数:
+                        attr :  线程属性
+                        detachstate : PTHREAD_CREATE_DETACHED (分离)
+                                      PTHREAD_CREATE_JOJINABLE (非分离)
+
+            释放线程资源函数:
+                int pthread_attr_destroy(pthread_attr_t* attr);
+                    // 上面的attr 使用完后需要用这个回收
+
+
+    范例:
+    // 创建一个子线程
+    pthread_t pthid;
+    
+    pthread_attr_t attr;        // 声明一个线程属性变量
+    pthread_attr_init(&attr);     // 将这个变量初始化
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);  // 将属性设置为 分离
+
+    int ret = pthread_create(&pthid, &attr, myfunc, NULL); // 创建线程,并将属性传入,分离
+
+    if( ret != 0){                                  // 判断是否创建成功
+        printf("error number: %d\n",ret);
+        printf("%s\n",strerror(ret));
+        exit(1);
+    }
+    
+    printf("parent thread id: %ld\n",pthread_self());   // 输出当前线程的id 号
+
+    sleep(2);
+    pthread_attr_destroy(&attr);        // 释放线程属性变量占用的空间.
+
+
+
+-----------------------------------------------------------------------
+
+多线程的情况下很容易造成 数据混乱
+    数据混乱的原因:
+        操作了共享资源
+        cpu 调度出现问题
+    解决方法:
+        线程同步
+            协同步调,按照先后顺序执行操作
+        数据加锁
+
+
+-------------
+
+线程同步思想 
+    给共享资源上锁.
+    然后每个线程都要判断这个锁的状态.然后确定访问权.
+    如果没有那到访问权,那么这个线程就会被阻塞,等待解锁.然后再去抢夺锁的拥有权.
+    通过加锁的机制,将线程的 并行 变更为了 串行.
+
+
+----------------
+
+互斥量 (互斥锁) { 如果一个线程加锁, 那么所有线程全部都要加锁 ,而且还是同一把锁 }
+    互斥锁类型 : 
+        创建一把锁  pthread_mutex_t mutex;     
+
+    每个共享资源 都会拥有一把只属于自己的锁, 就是说 有多少共享资源, 就会有多少把锁. 
+
+    互斥锁的特点: 
+        多个线程访问共享数据的时候是串行的操作.
+
+    互斥锁的缺点:
+        效率过低.
+
+    互斥锁的使用步骤:
+        创建互斥锁:  pthread_mutex_t mutex;
+        初始化着把锁 : pthread_mutex_init(&mutex, NULL);
+        寻找共享资源 : 
+            操作共享资源之前加锁: pthread_mutex_lock(&mutex);    //上锁后操作共享资源 ...
+            操作共享资源结束后解锁: pthread_mutex_unlock(&mutex);
+        加锁和解锁中间的操作被称作 临界区 . 这个临界区越小越好, 加锁解锁非常频繁,这个是很正常的.
+
+
+----------------
+
+
+互斥锁的相关函数:
+  初始化锁:   
+    pthread_mutex_init(pthread_mutex_t* mutex, const pthread_mutexattr_t* attr);
+        参数:  mutex : 锁 
+              attr  : 锁的属性, 一般给NULL 就好了, 我们不关心
+
+  销毁互斥锁:
+    pthread_mutex_destroy(pthread_mutex_t* mutex);
+        参数:   mutex : 锁
+
+  加锁:  { 有阻塞 } 
+    pthread_mutex_lock(pthread_mutex_t* mutex);
+        参数:   mutex : 锁
+        [ 没有上锁, 当前线程会将这把锁 锁上. ]
+        [ 被锁上了:  当前进程阻塞.   ]
+            [ 锁被打开之后, 线程解除阻塞 ]
+
+  加锁: { 无阻塞 }
+    pthread_mutex_trylock(pthread_mutex_t* mutex);
+        没有锁上: 当前进程会给这把锁 加锁.
+        如果锁上了: 不会阻塞, 会返回一个非0 的错误号. (char* strerror(number) 来打印)
+        使用该函数时,必须使用if 判断返回值是否为0 ,而且必须填写 else 语句的错误处理.
+     例: 
+        if( pthread_mutex_trylock( &mutex) == 0){
+            // 尝试加锁, 并且成功了
+            // 访问共享资源操作
+        } else {
+            // 错误处理.  或者等一会再次尝试加锁
+        }
+
+  解锁:
+    pthread_mutex_unlock(pthread_mutex_t* mutex);
+        参数:   mutex: 锁  { 无论有无阻塞都可以解锁 }
+  
+
+
+
+-----------------------------------------------------------------------
+
+
+
+
+
+-----------------------------------------------------------------------
+
+
+原子操作 : cpu 处理一个指令, 线程/进程 在处理完这个指令之前是不会失去cpu的.
+
+死锁  : 所有线程都阻塞了. (忘记解锁, 或多重上锁,或访问一个锁的时候再去去访问另一个锁). {说白了是自己作死}
+
+
+-----------------------------------------------------------------------
+
+
+第二种锁 读写锁
+
+读写锁 :  { 这是一个锁, 他的名字是 读写锁 } 
+
+    pthread_relock_t  lock;    // 读写锁的变量   , 他拥有读属性和写属性
+
+
+ 1.读写锁的类型:
+    读锁  - 对内存做读操作
+    写锁  - 对内存做写操作
+
+  
+ 2.读写锁的特性:
+    线程A 加 读锁 成功, 又来了三个线程,做读操作, 可以操作成功.
+        - 读共享  . 并行处理
+
+    线程A 加 写锁 成功, 又来了三个线程,做读操作, 三个线程阻塞.
+        - 写独占 
+
+    线程A 加 读锁 成功, 又来了B 线程加写锁 阻塞, 又来了C 线程加读锁 阻塞.
+        - 读写不能同时操作.
+        - 写的优先级高.(无论先来后到)
+
+
+ 3.读写执行场景:
+    线程A 加写锁成功, 线程B 请求读锁.
+        - 线程B 阻塞. 写独占
+
+    线程A 持有读锁, 线程B 请求写锁.
+        -线程B 阻塞. 读写不能同时操作
+
+    线程A拥有读锁, 线程B请求读锁.
+        - 线程B 加锁成功. 可以访问
+
+    线程A 持有读锁, 然后线程B 请求写锁, 然后线程C 请求读锁.
+        - B阻塞, C阻塞 , 写的优先级高
+        - A 解锁, B 加写锁成功. C 继续阻塞.
+        - B 解锁, C 加读锁成功. 
+
+    线程A 持有写锁, 然后线程B 请求读锁, 然后线程C 请求写锁.
+        - B阻塞, C阻塞
+        - A解锁, C加写锁成功, B 继续阻塞   写的优先级高.(无论先来后到)
+        - C解锁, B加写读成功
+
+
+4.读写锁的使用场景
+      读写锁:
+          读 - 并行
+          写 - 串行
+      程序中的 读操作的个数远大于 写操作的时候.
+
+
+
+ 5.主要操作函数
+    a.初始化读写锁
+        pthread_rwlock_init(
+            pthread_rwlock_t* restrict rwlock,      // pthread_relock_t 锁的变量地址
+            const pthread_rwlock_t* restrict attr   // 锁的属性, 给 NULL 就好了
+            );
+
+
+    b.销毁读写锁
+        pthread_rwlock_destroy(pthread_rwlock_t* rwlock);
+
+    c.加读锁
+        pthread_rwlock_rdlock(pthread_rwlock_t* rwlock);
+            // 阻塞: 之前这把锁加的是写锁的操作.
+
+    d.尝试加读锁
+        int pthread_rwlock_tryrdlock(pthread_rwlock_t* rwlock);
+            // 加锁成功: 返回0     失败返回:错误号 (strerror(number))
+    e.加写锁
+        pthread_rwlock_wrlock(pthread_rwlock_t* rwlock);
+            // 阻塞: 1. 上一次加的是写锁, 还没解锁的时候
+            //      2.  上次加的是读锁, 还没解锁的时候
+
+    f.尝试加写锁
+        int pthread_rwlock_trywrlock(pthread_rwlock_t* rwlcok);
+            // 加锁成功: 返回0      失败返回:错误号 (strerror(number))
+
+    g.解锁
+        pthread_rwlock_unlock(pthread_rwlock_t* rwlock);
+            // 无论读锁还是写锁,都是用这个, 毕竟两种锁不能同时生效.
+
+
+-----------------------------------------------------------------------
+// 读写锁范例   8个线程 其中5个读 number  剩下3个写number
+
+
+int number = 0;
+pthread_rwlock_t lock;
+
+void* write_func(void* arg){
+    
+    // 循环写
+    while(1){
+        pthread_rwlock_wrlock( &lock );
+        number++;
+        printf("== write:%lu , %d\n",pthread_self(), number);
+        pthread_rwlock_unlock( &lock );
+        usleep(500);    
+    }
+
+    return NULL;
+}
+
+void* read_func(void* arg){
+
+    while(1){
+        pthread_rwlock_rdlock( &lock );
+        printf("== read:%lu ,%d\n",pthread_self(),number);
+        pthread_rwlock_unlock( &lock );
+        usleep(500);
+    }
+    return NULL;
+}
+
+
+int main(int argc, char* argv[]){
+    //初始化读写锁
+    pthread_rwlock_init(&lock, NULL);
+
+    pthread_t p[8];
+    // 循环创建三个写线程
+    // 创建五个读线程
+    for(int i=0; i<3; ++i){
+        pthread_create( &p[i], NULL, write_func, NULL);
+    }
+
+    for(int i=3; i<8; ++i){
+        pthread_create( &p[i], NULL, read_func, NULL);
+    }
+    
+    //回收子线程pcb
+    for(int i=0; i<8 ;++i){
+        pthread_join(p[i], NULL);
+    }
+    
+    //释放读写锁资源
+    pthread_rwlock_unlock(&lock);
+    return 0;
+}
+
+
+
+-----------------------------------------------------------------------
+
+
+restrict，C语言中的一种类型限定符（Type Qualifiers），用于告诉编译器，对象已经被指针所引用，
+    不能通过除该指针外所有其他直接或间接的方式修改该对象的内容。
+
+-----------------------------------------------------------------------
+
+
+通过这个条件变量和 互斥锁可以实现 线程同步.
+
+条件变量 :  这个本质不是锁. 但是条件变量能够阻塞线程.
+
+    条件变量 + 互斥量(锁) 能够完成线程同步, 但是单一的话是不可以的.需要两个组合使用
+        互斥量(锁) :  保护一块共享数据
+        条件变量 : 引起阻塞
+
+    条件变量的两个动作是:
+        条件不满足, 阻塞线程 
+        当条件满足, 通知阻塞的线程开始工作
+
+    条件变量的类型是: pthread_cond_t ;
+
+    主要函数:
+        初始化一个条件变量
+        pthread_cond_init( pthread_cond_t* restrict cond, 
+            const pthread_condattr_t* restrict attr);    // 第二个参数是属性, 给NULL就好了 不需要设置
+
+        销毁一个条件变量
+        pthread_cond_destroy( pthread_cond_t* cond );
+
+        阻塞等待一个条件变量
+        pthread_cond_wait( pthread_cond_t* restrict cond,   // 条件变量的类型
+                pthread_mutex_t* restrict mutex);       // 这个是互斥锁的指针.
+            // 这个函数 会阻塞线程, 然后将已经上锁的 mutex 这个互斥锁解锁. 
+            //  当这个函数解除阻塞的时候, 会对互斥锁加锁.
+
+        唤醒至少一个 阻塞在条件变量上的线程:  { 到底唤醒几个 不确定 }
+        pthread_cond_signal( pthread_cond_t* cond);
+
+        唤醒全部 阻塞在条件变量上的线程: { 全部都要醒 }
+        pthread_cond_broadcast( pthread_cond_t* cond);
+
+        限时等待一个条件变量
+        pthread_cond_timedwait( pthread_cond_t* restrict cond,   // 条件变量的类型
+            pthread_mutex_t* restrict mutex,            // 互斥锁
+            const struct timespec* restrict abstime);   // 一个结构体,内部保存着需要设定的时间,需要自定义
+
+
+-----------------------------------------------------------------------
+// 简单进程同步范例
+
+
+// 创建节点结构
+typedef struct node{
+    int data;
+    struct node* next;
+}Node;
+
+// 永远指向链表头部的指针
+Node* head = NULL;
+
+//线程同步 需要一个互斥锁
+pthread_mutex_t mutex;
+
+//阻塞线程 ,条件变量类型的变量
+pthread_cond_t cond;
+
+// 生产者
+void* producer(void* arg){
+    while(1){
+        // 创建一个链表的节点
+        Node* pnew = (Node*)malloc(sizeof(Node));
+        pnew->data = rand() % 1000;  // 范围 0-999
+
+        pthread_mutex_lock( &mutex);
+        pnew->next = head;
+        head = pnew;
+        printf("==== produce: %lu, %d\n",pthread_self(),head->data);
+        pthread_mutex_unlock( &mutex);
+
+        // 通知消费者线程 解除阻塞
+        pthread_cond_signal( &cond);
+        sleep(rand() % 3);
+    }
+    return NULL;
+}
+
+void* customer(void* arg){
+    while(1){
+        pthread_mutex_lock( &mutex);
+        if( head == NULL){
+            pthread_cond_wait( &cond, &mutex ); // 阻塞,互斥锁解锁
+                                // 解除阻塞, 互斥锁上锁
+        }
+        
+        Node* pdel = head;
+        head = head->next;
+        printf("----- customer: %lu, %d\n",pthread_self(), pdel->data);
+        free(pdel);
+        pthread_mutex_unlock( &mutex);
+    
+    }
+    return NULL;
+}
+
+
+int main(int argc, char* argv[]){
+    pthread_t p1,p2;
+    // 初始化互斥锁和条件变量类型
+    pthread_mutex_init( &mutex, NULL );
+    pthread_cond_init( &cond,  NULL);
+
+
+    
+    //生产者线程
+    pthread_create( &p1, NULL, producer, NULL);
+    //消费者线程
+    pthread_create( &p2, NULL, customer, NULL);
+    
+    // 阻塞 回收子线程
+    pthread_join( p1, NULL);
+    pthread_join( p2, NULL);
+
+    // 销毁互斥锁和条件变量
+    pthread_mutex_unlock( &mutex);
+    pthread_cond_destroy( &cond);
+
+    return 0;
+}
+
+
+-----------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------
+
+
+<semaphore.h>
+也是一种同步方式:   信号量
+
+信号量 (信号灯) : 是锁   而且是并行的
+             他和 互斥锁的区别就是 资源大小, 互斥锁只能是1 ,而他却可以大于1. 能够实现线程并行处理.互斥锁是串行.
+
+信号量类型:   
+    sem_t sem;     // 就是一个加强版的 互斥锁.
+
+主要函数:
+    初始化信号量
+        sem_init(sem_t* sem, int pshared, unsigned int value);
+            
+            pshared 参数 : 0 - 线程同步
+                          1 - 进程同步
+            value   参数:  最多有几个线程 同时 操作共享数据
+
+    销毁信号量
+        sem_destroy(sem_t* sem);
+
+    加锁
+        sem_wait(sem_t* sem);
+            调用一次相当于对 sem 初始化的value 做了 --(自减) 操作
+            如果sem值为0, 线程会阻塞.
+
+    尝试加锁
+        sem_trywait(sem_t* sem)
+            sem == 0 , 加锁失败, 不阻塞, 直接返回
+
+    限时尝试加锁
+        sem_timedwait(sem_t* sem, xxx);
+
+    解锁
+        sem_post(sem_t* sem);
+            对 sem 初始化的 value 做 ++ (自增) 操作, 不能大于value的上限.
+
+
+
+
+-----------------------------------------------------------------------
+//范例  这是个线程的,   也可以修改成进程的, 但是需要 mmap 内存映射区 来通信
+
+
+sem_t  produce_sem;
+sem_t  custom_sem;
+
+// 创建节点结构
+typedef struct node{
+    int data;
+    struct node* next;
+}Node;
+
+// 永远指向链表头部的指针
+Node* head = NULL;
+
+
+// 生产者
+void* producer(void* arg){
+    while(1){
+        sem_wait( &produce_sem);  // pro --  == 0 ,阻塞
+        // 创建一个链表的节点
+        Node* pnew = (Node*)malloc(sizeof(Node));
+        pnew->data = rand() % 1000;  // 范围 0-999
+        pnew->next = head;
+        head = pnew;
+        printf("==== produce: %lu, %d\n",pthread_self(),head->data);
+        
+        sem_post( &custom_sem ); // custom ++
+
+        sleep(rand() % 3);
+    }
+    return NULL;
+}
+
+void* customer(void* arg){
+    while(1){
+        sem_wait(&custom_sem);
+        
+        Node* pdel = head;
+        head = head->next;
+        printf("----- customer: %lu, %d\n",pthread_self(), pdel->data);
+        free(pdel);
+        
+        sem_post( &produce_sem);
+
+        sleep(rand() %5);
+
+    }
+    return NULL;
+}
+
+
+int main(int argc, char* argv[]){
+    pthread_t p1,p2;
+    // 初始化互斥锁和条件变量类型
+
+    sem_init(&produce_sem, 0 ,4);
+    sem_init(&custom_sem, 0 ,0 );
+
+    
+    //生产者线程
+    pthread_create( &p1, NULL, producer, NULL);
+    //消费者线程
+    pthread_create( &p2, NULL, customer, NULL);
+    
+    // 阻塞 回收子线程
+    pthread_join( p1, NULL);
+    pthread_join( p2, NULL);
+
+    sem_destroy(&produce_sem);
+    sem_destroy(&custom_sem);
+    
+    return 0;
+}
+
+-----------------------------------------------------------------------
+
+

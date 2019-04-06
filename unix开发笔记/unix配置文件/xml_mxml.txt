@@ -1,0 +1,290 @@
+<mxml.h>
+
+编译的时候需要添加 -lmxml 参数
+    gcc lmxml.c -lmxml -lpthread  -o mxml.out
+
+
+XML
+
+
+开源库 minixml 官方地址:
+    https://www.msweet.org/mxml/
+  其他解析 xml 开源库: tinyxml   pugixml 等等
+
+        写程序的时候需要包含头文件 <mxml.h>
+        编译的时候需要添加动态库  libmxml.so   / mac 下是 libmxml.a
+                动态库的文件存在 /usr/local/lib   文件夹中.  如果找不到就添加路径到环境变量.
+  
+1. minixml 安装:
+    ./configure --enable-threads=no && make
+    sudo make install 
+
+2. 新目录文件需要一个头文件 - 标准
+    <?xml version="1.0" encoding="utf-8"?>
+        version 这个参数绝对不能省略, 而且必须写在整个文件的开头
+        encoding 这个无所谓
+
+3. 使用注意事项
+    必须有一个根元素(节点) -- (只能有一个)
+    xml标签区分大小写.
+    标签大多成对出现, 有开始,有结束.
+        <date></date>
+        <date>数据</date>
+        <time/>
+        <time opern="属性"/>
+
+4. 标签中可以添加属性
+    <node date="17/11/2017"></node>
+    属性的值必须加双引号
+
+5. 标签注释
+    <!-- 这是注释的格式 -->
+
+6. 开源库 minixml 的使用
+    根标签的对应的节点, 父节点是: 头文件节点
+
+    - 生成 xml 文件
+        a. 创建一个新的 xml 文件
+            mxml_node_t* mxmlNewXML(
+                            const char* version     // 直接给 "1.0" 就OK
+                );
+              返回新创建的xml文件节点.
+              默认的文件编码为utf8
+
+        b. 添加一个新的节点
+            mxml_node_t* mxmlNewElement( 
+                            mxml_node_t* parent,   // 父节点
+                            const char* name       // 新节点标签名
+                            );
+        c. 设置节点的属性名和属性值
+            void mxmlElementSetAttr(
+                            mxml_node_t* node,  // 被设置属性的节点
+                            const char*  name,  // 节点的属性名
+                            const char*  value  // 属性值
+                            );
+        d. 创建节点的文本内容
+            mxml_node_t* mxmlNewText(
+                            mxml_node_t* node,   // 节点地址
+                            int    whitespace,   // 是否有空白, 直接给0
+                            const char*  string  // 文本内容
+                            );
+        e. 保存节点到 xml 文件(就是写入磁盘)
+            int mxmlSaveFile(
+                            mxml_node_t*   node,   // 根节点
+                            FILE*          fp,     // 文件指针
+                            mxml_save_cb_t cb      // 默认给 MXML_NO_CALLBACK
+                            );
+        f. 释放节点占用的内存
+            void mxmlDelete( 
+                            mxml_node_t*   node    // 第一个根节点
+                            );
+    
+    - 解析 xml 文件
+        a. 从文件加载 xml 到内存
+            mxml_node_t* mxmlLoadFile(
+                            mxml_node_t* top,       // 一般给NULL
+                            FILE*        fp,        // 文件指针
+                            mxml_node_t (*cb)(mxml_node_t*)   // 默认是 MXML_NO_CALLBACK
+                            );
+        b. 获取节点的属性
+            const char* mxmlElementGetAttr(
+                            mxml_node_t* node,   // 带属性的节点的地址
+                            const char*  name    // 需要查找的属性名
+                            );
+        c. 获取指定节点的文本内容
+            const char* mxmlGetText(
+                            mxml_node_t* node,      // 节点的地址
+                            int*         whitespace // 是否带有空格, 一般给0
+                            );
+        d. 转到下一个节点 (如果xml文件有换行,就不要使用这个函数, 用mxmlFindElement())
+            mxml_node_t* mxmlWalkNext(
+                            mxml_node_t* node,  //当前节点
+                            mxml_node_t* top,   // 根节点
+                            int descend         // 搜索的规则
+                            );
+                    descend 参数:  搜索的规则  
+                                    MXML_NO_DESCEND    ; 查看同层级
+                                    MXML_DESCEND_FIRST ; 查看下一层级的第一个
+                                    MXML_DESCEND       ; 一直向下搜索
+        f. 查找节点
+            mxml_node_t* mxmlFindElement(
+                            mxml_node_t*  node,      // 当前节点
+                            mxml_node_t*  top,       // 根节点
+                            const char*   name,      // 查找的标签名
+                            const char*   attr,      // 查找的标签的属性, 没有属性就给NULL
+                            const char*   value,     // 查找的标签的属性值
+                            int           descend    // 同上面的 搜索的规则
+                            );
+
+-------------------------------------------------------------------------------------
+<!-- xml 文件的标准格式 -->
+
+
+<!-- 注释 -->
+<!-- 树状结构的标签 -->
+<!-- 所有的数据内容 区分大小写, 包括标签名字 -->
+
+<!-- 文件头, 下面这行必须要有 -->
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 根标签, 有 且只能有一个, 名字随便起-->
+<country>  
+    <!-- 子节点 没有限制,可以重名, 名字随便起 -->
+    <chian>
+        <city>       
+            <!-- 标签一般都成对出现, 标签内必须有值和内容, 字标签也算是内容 -->
+            <!-- 标签内可以设置属性, 名称自定义, 属性需要使用 "" 包含 -->
+            <!-- 数据是写在一对标签相对的尖括号中间的 -->
+            <name isbig="true">北京</name>
+                <area unit="平方公里">16410</area>
+                <peoepl unit="万">2171</peoepl>
+                <GDP unit="亿元">24541</GDP>
+                
+                <!-- 这样写可以不用成对, 一个单独的标签拿出来, 但必须有属性-->
+                <AA opt="属性"/>
+
+            </name>
+        </city>
+        <city>
+            <name isbig="true">东京</name>
+                <area unit="平方公里">2188</area>
+                <peoepl unit="万">3670</peoepl>
+                <GDP unit="亿元">31700</GDP>  
+        </city>
+    </chian>
+
+</country>
+
+-----------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------------------
+
+解析范例模版
+
+
+#include <stdio.h>
+#include <mxml.h>
+
+int main(int argc, const char* argv[])
+{
+    if(argc < 2)
+    {
+        printf("./a.out filename\n");
+        return 0;
+    }
+    // 加载xml文件
+    FILE* fp = fopen(argv[1], "r");
+    mxml_node_t* root = mxmlLoadFile(NULL, fp, MXML_NO_CALLBACK);
+
+    // 找到第一个factory节点
+    mxml_node_t* factory = mxmlFindElement(root, root, "factory", "name", NULL, MXML_DESCEND);
+    // 循环查找
+    while( factory  )
+    {
+        // 打印几点的属性值
+        printf("factory attr: %s\n", mxmlElementGetAttr(factory, "name"));
+
+        // 向下移动一个节点
+        mxml_node_t* brand = mxmlWalkNext(factory, root, MXML_DESCEND);
+        while( brand )
+        {
+            // name
+            mxml_node_t* node = mxmlWalkNext(brand, root, MXML_DESCEND_FIRST);
+            printf("    name: %s\n", mxmlGetText(node, 0));
+            // color
+            node = mxmlWalkNext(node, root, MXML_NO_DESCEND);
+            printf("    color: %s\n", mxmlGetText(node, 0));
+            // price
+            node = mxmlWalkNext(node, root, MXML_NO_DESCEND);
+            printf("    price: %s\n", mxmlGetText(node, 0));
+            printf("    =========================================\n");
+
+            // 找到下一个品牌节点
+            brand = mxmlFindElement(brand, root, "brand", NULL, NULL, MXML_NO_DESCEND);
+        }
+        // 打印该厂家对应的车辆品牌和属性信息
+        // 查找下一个节点
+        factory = mxmlFindElement(factory, root, "factory", "name", NULL, MXML_NO_DESCEND);
+    }
+    mxmlDelete(root);
+    fclose(fp);
+
+    return 0;
+}
+
+
+
+-----------------------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------------------
+
+创建xml 文件的模版
+
+
+#include <stdio.h>
+#include <mxml.h>
+
+int main(int argc, const char* argv[])
+{
+    // 创建xml文件头节点
+    mxml_node_t *xml = mxmlNewXML("1.0");
+
+    // 创建xml根节点 - china
+    mxml_node_t* china = mxmlNewElement(xml, "China");
+
+
+    // 创建城市节点
+    mxml_node_t* city = mxmlNewElement(china, "City");
+    // 添加子节点
+    // name
+    mxml_node_t* name = mxmlNewElement(city, "Name");
+    // 设置标签值
+    mxmlNewText(name, 0, "北京");
+    mxmlElementSetAttr(name, "isbig", "true");
+    // 面积
+    mxml_node_t* area = mxmlNewElement(city, "Area");
+    mxmlNewText(area, 0, "1.641万平方千米");
+    // 人口
+    mxml_node_t* popu = mxmlNewElement(city, "Population");
+    mxmlNewText(popu, 0, "2200万");
+
+    // 第二个城市节点
+    city = mxmlNewElement(china, "City");
+    // name
+    name = mxmlNewElement(city, "Name");
+    mxmlNewText(name, 0, "石家庄");
+    mxmlElementSetAttr(name, "isbig", "false");
+    area = mxmlNewElement(city, "Area");
+    mxmlNewText(area, 0, "15848平方千米");
+    popu = mxmlNewElement(city, "Population");
+    mxmlNewText(popu, 0, "107万");
+
+    // 将xml内容保存到磁盘
+    FILE* fp = fopen("china.xml", "w");
+    mxmlSaveFile(xml, fp, MXML_NO_CALLBACK);
+    fclose(fp);
+    mxmlDelete(xml);
+    
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------------------------------------------

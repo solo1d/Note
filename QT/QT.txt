@@ -1,0 +1,351 @@
+常用头文件和说明:
+<QPushButton>   使用按钮需要包含该头文件  QPushButton
+<QMenuBar>      菜单栏头文件   QMenuBar
+<QToolBar>      工具栏头文件   QToolBar
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  QT 最大的优势是 跨平台,   在1991年出生.     <笔记QT版本 5.12 for mac >
+  绝对不出在创建项目和文件名中出现中文.
+
+在创建项目的时候 Details (类信息) 中 ,基类关系是
+        QWidget 是基类 (只有一个空白窗口)        
+        QMainWindow 是子类(有菜单栏,窗口,状态栏,工具栏)      
+        QDialog 是子类 (对话框)
+
+命名规范 :  类名 : 首字母大写, 单词与单词之间首字母大写 
+           函数名和变量名 :首字母小写  单词与单词之间首字母大写,
+
+对象树:
+    所有new 出来的对象, 不用管释放, 都会自动挂到 children 表中.
+    原因是 children 表中的对象会在窗口关闭后进行自动释放.
+
+Qt中的坐标系:   x 左上角到右 ,  y 左上角到底部, 全部都是增加,没有负数.
+
+
+信号和槽:
+    需求  点击按钮  关闭窗口.  连接操作
+    connect(参数1 信号的发送者, 参数2 发送的信号地址,参数3 信号的接受者, 参数4处理的槽函数地址);
+    优点  松散耦合
+    例子: connect(myBtn,&QPushButton::clicked, this, &QWidget::close);
+    
+自定义信号和槽
+    自定义信号: 
+        返回值为 void 
+        需要声明, 不需要实现. 
+        可以有参数. 也可以重载.
+        自定义信号 需要写到继承QObject类中的 signals 下
+    自定义槽函数:
+        返回值为 void
+        需要声明, 需要实现.
+        可以有参数, 可以重载.
+        自定义槽函数 需要写到继承QObject类中的 public solts 下
+    触发自定义的信号
+        emit     // 后面跟槽函数的调用,一般写在某个函数中
+    当自定义信号和槽出现重载的时候,原先写法失效,因为执行的函数地址不明确.
+        解决方法: 利用函数指针 来明确指向哪个函数的地址.
+    QString 转 char* , 首先 toUtf8() 转 QByteArray 类型, 再利用 data()转成char*
+
+信号和槽的拓展
+    信号是可以连接信号的
+    信号和槽可以断开 disconnect() 参数和connect()相同
+    一个信号可以连接多个槽函数
+    多个信号可以连接同一个槽函数
+    信号和槽函数的参数个数必须一一对应
+    信号的参数个数 可以大于槽函数的参数个数, 反之不可以.
+
+QT4 版本信号槽写法(不推荐使用)
+    信号: SIGNAL() 内
+    槽:   SLOT() 内
+    优点  参数直观, 不写函数指针
+    缺点  不会做类型检测
+
+Lanbda 表达式
+    [](){}
+    [] 内部 = 值传递 (推荐), & 引用传递
+    () 参数
+    {} 函数实现体
+    mutable 改变值传递改变内部变量  例如:  [=]()mutable{};
+    返回值 []()->type{};   type是类型
+
+
+
+
+菜单栏
+    整个项目只能有一个
+    menuBar() 返回一个 QMenuBar* bar .
+    将 bar 放入到窗口中 setMenuBar(bar).
+    添加菜单 addMenu("文件");
+    添加菜单项  addAction("新建");
+    分割线 addSeparator();
+工具栏
+    可以有多个
+    QToolBar
+    addToolBar(停靠位置,toolbar);   //停靠范围是 Qt::LeftToolBarArea 这个枚举类型
+    设置 停靠, 浮动, 移动
+    工具栏中可以添加菜单项
+    也可以添加分隔符.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------+
+
+01_Qt_first.pro
+    默认生成的 .pro 文件是项目工程文件. 如果不懂就千万不要改,而且不允许出现中文.
+文件内容和解释是:
+
+QT       += core gui       // Qt包含的模块,默认包含了两个模块, qmake 表示需要添加到这里的模块名称
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets  //大于4版本, 包含widget模块, 为了兼容旧版本.
+
+TARGET = 01_Qt_first       // 目标 就是生成的应用程序的名称
+TEMPLATE = app             // 模版 应用程序, 有lib  vclib 等等的项目文件. 就是生产出来的程序
+DEFINES += QT_DEPRECATED_WARNINGS
+CONFIG += c++11            // 使用c++11版本和新特性
+
+SOURCES += \
+        main.cpp \          //这个项目下的源文件, 自动添加的, 有多少个文件,这里都会显示.
+        mywidget.cpp
+
+HEADERS += \
+        mywidget.h          // 这个项目下的头文件, 也是自动添加.
+
+
+qnx: target.path = /tmp/$${TARGET}/bin
+else: unix:!android: target.path = /opt/$${TARGET}/bin
+!isEmpty(target.path): INSTALLS += target
+
+
+-------------------------------------------------------------------------+
+
+项目建成后  默认的main.cpp 文件介绍和解释:
+
+
+#include "mywidget.h"
+#include <QApplication>    // 包含头文件  应用程序
+
+// 程序入口argc 命令行变量数量,argv 命令行变量数组
+int main(int argc, char *argv[])
+{
+    //应用程序对象 a  ,Qt中 有且仅有一个 应用程序对象
+    QApplication a(argc, argv);
+    // 创建 MyWidget 对象 w, MyWidget基类是 QWidget, 就是创建一个窗口对象,名字是w
+    MyWidget w;
+    // 窗口默认是不会弹出的, 如果想弹出 调用show() 方法
+    w.show();
+
+    // a.extc()  进入消息循环机制. 就是死循环
+    // 类似于system("pause");  防止窗口一闪而过.
+    return a.exec();
+}
+
+
+
+-------------------------------------------------------------------------+
+
+mybutton.h 文件内容
+
+
+#ifndef MYBUTTON_H
+#define MYBUTTON_H
+
+#include <QWidget>
+#include <QPushButton>
+
+class Mybutton : public QPushButton
+{
+    Q_OBJECT
+public:
+    explicit Mybutton(QWidget *parent = nullptr);
+    ~Mybutton();
+signals:
+    // 自定义信号的位置
+    // 没有返回类型,  必须是void
+    // 信号只需要声明, 不需要实现
+    // 信号可以有参数. 也可以重载
+
+public slots:
+    // 自定义槽函数的位置
+};
+
+#endif // MYBUTTON_H
+
+
+
+
+-------------------------------------------------------------------------+
+
+mywidget.h文件内容
+
+
+
+#ifndef MYWIDGET_H
+#define MYWIDGET_H
+
+#include <QWidget>
+
+class MyWidget : public QWidget   //MyWidget 继承  Qwidget
+{
+    Q_OBJECT      // Q_OBJECT宏  写了这个宏 就支持了 QT中的信号和槽机制
+
+public:
+    MyWidget(QWidget *parent = nullptr);  // 构造函数
+    ~MyWidget();        //析构函数
+};
+
+#endif // MYWIDGET_H
+
+
+-------------------------------------------------------------------------+
+
+
+mywidget.cpp文件内容:
+实现了一个按钮控件.
+
+#include "mywidget.h"
+#include <QPushButton>
+#include "mybutton.h"
+#include <QDebug>
+
+MyWidget::MyWidget(QWidget *parent)
+    : QWidget(parent)
+{
+    QPushButton* btn = new QPushButton;    //一个按钮
+    //btn->show();          // show 用顶层方式弹出, 如果想在 MyWidget窗口中显示,
+                          // 就需要依赖MyWidget窗口,(就是隐藏在顶层窗口下面了)
+    btn->setParent(this);   // 设置父亲, 将在主窗口中显示.
+    btn->setText("德玛西亚");         // 设置文字  , 参数是Qstring ,  就是 string
+
+    //创建按钮的第二种方式, 窗口会按照 btn2大小进行显示 , 就是字符串的长度.
+    QPushButton* btn2 = new QPushButton("第二个按钮",this);
+    //重置窗口大小之后,就不会按照 字符串长度来显示了.
+    this->resize(600,400);
+
+    // 移动第二个按钮, 从左上角开始计算 xy 轴, 向x左移动100 向y下移动100
+    btn2->move(100,100);
+
+    //重置按钮大小, 也是resize 方法.
+    btn2->resize(80,80);
+
+    //重置窗口标题, 更改窗口上面标题的名字
+    setWindowTitle("Qt的第一个窗口");
+
+    //设置固定窗口大小,就不能进行缩放和改变窗口大小了
+    setFixedSize(600,400);
+
+    //创建自己的按钮
+    Mybutton* myBtn = new Mybutton;
+    myBtn->setText("我自定义的关闭按钮");
+    myBtn->move(200,200);
+    myBtn->setParent(this);
+
+
+    // 点击 MyBtn 关闭窗口, 槽
+    // 参数1 信号的发送者, 参数2 发送的信号,参数3 信号的接受者, 参数4处理的槽函数
+    connect(myBtn,&QPushButton::clicked, this, &QWidget::close);
+
+
+}
+
+MyWidget::~MyWidget()
+{
+    qDebug() << "MyWidget析构了";
+}
+
+
+
+-------------------------------------------------------------------------+
+
+mybutton.cpp 文件内容
+
+
+
+#include "mybutton.h"
+#include <QtDebug>
+
+Mybutton::Mybutton(QWidget *parent) : QPushButton(parent)
+{
+
+}
+
+
+Mybutton::~Mybutton(){
+    qDebug() << "MyButton的析构";
+}
+
+
+
+-------------------------------------------------------------------------+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

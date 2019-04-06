@@ -1,0 +1,1384 @@
+accept(), socket(), memset(), htons(), htonl(), ntohs(), ntohl(), 
+inet_ntop(), inet_pton(), listen(), bind(), 
+select(), pollfd(), poll(),
+epoll(), epoll_create(), epoll_ctl(), epoll_wait(), epoll_event(), 
+ssize_t recvfrom(), ssize_t sendto(), 
+
+<sys/socket.h> , <arpa/inet.h> , <signal.h> , <sys/types.h> , <sys/socket.h>
+<sys/epoll.h>  , <sys/poll.h>  , <sys/select.h> , <arpa/inet.h>
+
+
+文件描述符突破 1024限制
+    1. select - 突破不了, 需要重新编译内核
+    2. poll和epoll 可以突破1024限制.
+        poll 内部链表
+        epoll 红黑树
+    查看受计算机硬件限制的文件描述符上限(设置的时候不能超过这个上限)
+        cat  /proc/sys/fs/file-max
+        MAX OS : sysctl -a | grep files
+    通过配置文件修改上限值
+        /etc/security/limits.conf
+            * soft  nofile   8000
+            * hard  nofile   8000
+        重启或注销虚拟机.
+
+
+
+TCP和UDP使用场景
+    TCP使用场景:
+        -对数据安全性要求高的时候
+            登陆数据的传输
+            文件传输
+        -http协议
+            传输层协议 - TCP
+    UDP使用场景:
+        -效率高 - 实时性要求比较高的时候
+            视频聊天
+            童话
+        -有实力的大公司
+            使用udp
+            在应用层自定义协议, 做数据效验
+
+
+
+TCP 多进程并发服务器;
+
+并发: 在某个特别短的时间片段之内,它能够处理的最多的任务的个数.(一个cpu 在一个时间点只能处理一个任务).
+并发服务器: 这某个特别短的时间片段之内,服务器最多能够处理多少个连接. (接受的越多,并发量越大)
+
+TCP - 面向连接的安全的数据包通信
+        基于流 sock_stream
+UDP - 面向无连接的不安全的报文传输
+
+
+    单进程方式处理,单连接连接
+        1 创建套接字
+        2 绑定
+        3 监听
+        4 接受连接请求
+        5 通信
+        6 断开
+
+
+    多进程方式, 处理服务器多链接
+        1.共享的数据
+            读时共享,写时复制.
+            文件描述符
+            内存映射区 -- mmap
+        2.父进程的角色
+            等待接受客户端连接 -- accept(int fd, struct sockaddr* addr, size_t * addr_len);
+                有连接:
+                    创建一个子进程 fork()
+                将通信的文件描述符关闭
+                    避免浪费资源,毕竟用不到
+        3.子进程的角色
+            通信
+                使用 accept 的返回值(套接字, 文件描述符)
+            关闭肩痛的文件描述符
+                避免资源浪费
+        4.创建的进程的个数限制
+            收到硬件限制
+            文件描述符默认上限是1024,(mac os 是256)
+        5.子进程资源回收
+            wait/waitpid
+            使用信号回收
+                信号捕捉
+                    signal
+                    sigaction - 用这个
+                    需要捕捉的信号: SIGCHLD,子进程结束时, 父进程会收到这信号.默认行为:忽略
+
+
+------------------------------------
+多进程并发案例:
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/wait.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <errno.h>
+
+// 信号处理 回调函数
+void myfunc(int num){
+    pid_t pid;
+    while(  (pid = waitpid( -1, NULL ,WNOHANG)) > 0){
+        printf("发现字线程死亡, 进行回收,pid:%d\n",pid);
+    }
+}
+
+int main(int argc, char* argv[]){
+
+    // 监听套接字
+    int lfd = socket(AF_INET, SOCK_STREAM,0);
+
+    struct sockaddr_in addr;
+    memset(&addr, 0 , sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port   = htons(9999);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_len = sizeof(addr);
+
+    struct sockaddr_in caddr;
+    memset(&caddr, 0 ,sizeof(caddr));
+
+
+    //绑定
+    bind(lfd, (struct sockaddr*)&addr, sizeof(addr));
+
+    // 设置监听
+    listen(lfd, 128);
+
+    //信号 回收子进程 
+    struct sigaction act;
+    act.sa_flags = 0;
+    sigemptyset( &act.sa_mask );
+    act.sa_handler = myfunc;
+    sigaction(SIGCHLD, &act, NULL);
+
+    while(1){
+        socklen_t  slen = 0;
+        int cfd = accept(lfd, (struct sockaddr*)&caddr,&slen);
+        while( cfd == -1 && errno == EINTR){
+            cfd = accept(lfd, (struct sockaddr*)&caddr,&slen);
+        }
+
+        pid_t pid = fork();
+        if( pid == 0){ /*子进程*/
+
+            char ipbuf[64] = {0};
+            printf("客户端ip:%d,端口%d\n",inet_ntop(AF_INET, (void*)&caddr.sin_addr.s_addr, ipbuf, sizeof(ipbuf)), 
+                                          ntohs(caddr.sin_port));
+
+            printf("创建了新的进程pid : %d, 父进程:%d\n",getpid(),getppid());
+            close(lfd);
+
+            while(1){
+                char buf[40]= {0};
+                sleep(1);
+                int len = read(cfd, buf, sizeof(buf));
+                if(len == -1){
+                    perror("len read error -1");
+                    exit(1);
+                }else if( len == 0){
+                    printf("客户端端开了连接\n");
+                    close(cfd);
+                    break;
+                }else{
+                    printf("收到的字符串:%s\n",buf);
+                    //write(cfd, buf, len);
+                }
+            }
+            close(cfd);
+            //子进程结束
+            return 0;
+
+        }else if(pid > 0 ){/*父线程*/
+            close(cfd);
+        }else{
+            perror("fork error");
+            exit(1);
+        }
+    }
+
+    return 0;
+}
+
+
+
+-------------------------------------------------
+-----------------------------------------------
+-----------------------------------------
+------------------------------------
+多线程并发案例:
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <signal.h>
+#include <errno.h>
+
+
+// 自定义数据结构
+typedef struct SockInfo{
+    int fd;    // 套接字 文件描述符
+    struct sockaddr_in addr;
+    pthread_t  id;    //线程id
+}SockInfo;
+
+// 子线程回调函数
+void* worker(void* arg){
+    SockInfo* info = (SockInfo*)arg;
+    char ip[64];
+    char buf[1024];
+
+    //通信
+    while(1){
+        printf("client IP: %s, port: %d\n",
+                inet_ntop(AF_INET, &info->addr.sin_addr.s_addr,
+                    ip, sizeof(ip)), 
+                ntohs(info->addr.sin_port));
+        int len = read( info->fd, buf, sizeof(buf));
+        if( len == -1){
+            perror("read error");
+            close( info->fd );
+            pthread_exit(NULL);  // 千万不要连累主线程和其他线程,以及进程
+        }else if (len == 0){
+            printf("client close port 客户端端开了连接\n");
+            close( info->fd );
+            break;
+        }else{
+            printf("recv buf : %s\n",buf);
+            write( info->fd , buf , len );
+        }
+    }
+    return NULL;
+}
+
+
+int main(int argc, char* argv[]){
+
+    // 将端口参数 设置为运行 的第二个参数
+    if(argc < 2){
+        printf("eg: ./a.out port\n");
+        exit(1);
+    }
+    struct sockaddr_in serv_addr;
+    socklen_t serv_len = sizeof( serv_addr );
+    int port = atoi(argv[1]);
+
+    // 创建套接字
+    int lfd  = socket( AF_INET, SOCK_STREAM, 0);
+
+    // 初始化服务器
+    memset(&serv_addr, 0, serv_len);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(port);
+
+    //绑定IP和端口
+    bind( lfd, (struct sockaddr*)&serv_addr, serv_len);
+
+    //设置同时连接的最大个数
+    listen( lfd, 128);
+    printf("Start accept...\n");  // 开始等待连接了
+
+    //创建结构体数组
+    SockInfo info[128];
+    int i = 0;
+    for(; i<sizeof(info)/sizeof(info[0]); ++i){
+        info[i].fd = -1;
+    }
+
+    struct sockaddr_in client_addr;
+    socklen_t cli_len = sizeof(struct sockaddr_in);
+    while (1){
+
+        for(i=0; i<128; ++i){
+            if( info[i].fd == -1 )
+                break;
+        }
+        if( i == 128 ){
+            break;
+        }
+
+        // 开始阻塞  ,等待连接
+        info[i].fd = accept(lfd, (struct sockaddr*)&info[i].addr, &cli_len);
+        while( info[i].fd == -1 && errno == EINTR ){
+            // 这个循环是为了避免被信号扰乱阻塞属性
+            info[i].fd = accept(lfd, (struct sockaddr*)&info[i].addr, &cli_len);
+        }
+
+        //这里开始就是核心程序了
+        // 创建字线程 - 通信
+
+        pthread_create(&info[i].id, NULL, worker, (void*)&info[i]);
+        // 设置线程分离.
+        pthread_detach(info[i].id);
+
+    }
+
+    close(lfd);
+    pthread_exit(NULL);   //退出主线程
+    return 0;
+}
+
+
+
+
+
+
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+
+
+<sys/select.h>
+<sys/socket.h>
+
+IO多路转接 <select>
+    - 先构造一张有关文件描述符的列表, 将要监听的文件描述符添加到该列表中.
+    - 然后调用一个函数(select), 监听该表中的文件描述符, 知道这些描述符表中的一个进行I/O 操作时,该函数才返回.
+        该函数为阻塞函数.
+        函数对文件描述符的检测操作是由内核来完成的.
+    - 在返回时, 它告诉进程有多少(那些) 描述符要进行I/O操作.·
+    
+
+
+
+
+    函数原型:     int select( int nfds,                  // 要检测的文件描述符最大值的fd+1 到 1024
+                            fd_set* readfds,            // 文件描述符 读集合, 传入传出参数,
+                            fd_set* writefds,           // 文件描述符 写集合, 传入传出参数, 一般不设置,给NULL
+                            fd_set* exceptfds,          // 文件描述符 异常集合,传入传出参数, 一般不设置,给NULL
+                            struct timeval* timeout);   // 阻塞参数
+
+         参数:   int nfds : 要检测的文教描述符的最大值, 如果不清楚就写 1024.
+
+         参数:   fd_set* rdset;     // 是个 unsigned long 的 16个元素的数组,有1024个标志位(bit). 16*8*8
+                   操作 文件描述符集合表操作的函数:    fd_set 是个类型
+                        -全部清空
+                            void FD_ZERO(fd_set* set);
+                        -从集合中删除某一项 , 清除之后标志位从 1 变成了 0
+                             void FD_CLR(int fd, fd_set* set);
+                        -将某个文件描述符添加到集合中
+                            void FD_SET(int fd, fd_set* set);
+                        -判断某个文件描述符是否在集合中
+                            int FD_ISSET(int fd, fd_set* set);   // 返回1表示存在.
+                这个参数必须要写两个. 开始和再次调用select之前进行复制.保证两个表相同.
+                一个传给内核作修改, 一个是修改前的备份,用来比对有哪个进行了修改, 也是就某个套接字发送过来了数据,
+                    或者来了新的连接.
+
+    
+         参数:  timeout :  NULL      - 永久阻塞,  当检测到fd 变化的时候返回.
+                         timeval a;   a.tv_sec = 10; //定时阻塞,函数必须阻塞等待设定的时常,然后返回,无论有没有连接
+                                      a.tv_usec=  0; //如果这两个参数都设置为0,那么就是 非阻塞
+
+                (阻塞参数的结构体原型)
+                struct timeval {
+                    long tv_sec;    // 秒数
+                    long tv_usec;   // 微秒数
+                };
+
+
+        返回值:  检测的集合内有几个标志位变了,返回变了的个数, 然后自己去遍历.   
+                -1 表示失败
+
+    思路: 
+        监听
+        将待检测的数据初始化到 fd_set 集合中
+        while(1)  循环的委托内核检测
+        {
+            select();
+            判断fd 时候是监听的
+            已经连接的客户端发送来的数据
+            for();
+            {
+                FD_ISSET(i,&reads);
+            }
+        }
+
+
+
+    使用select 函数的优缺点:
+        优点: 
+            跨平台.
+        缺点:
+            -每次调用select, 都需要把fd集合从用户拷贝到内核态, 这个开销在fd 很多时会很大,
+            -同时每次调用select都需要在内核遍历传递进来的所有fd, 这个开销在fd很多时也很大.
+            -select 支持的文件描述符数量太小. 默认是1024.
+
+
+
+
+---------------------------------------------------------------------------------
+
+
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <ctype.h>
+#include <sys/select.h>
+
+#define SERV_PORT 8989
+
+int main(int argc, const char* argv[])
+{
+    int lfd, cfd;
+    struct sockaddr_in serv_addr, clien_addr;
+    int serv_len, clien_len;
+
+    // 创建套接字
+    lfd = socket(AF_INET, SOCK_STREAM, 0);
+    // 初始化服务器 sockaddr_in 
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;                   // 地址族 
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);    // 监听本机所有的IP
+    serv_addr.sin_port = htons(SERV_PORT);            // 设置端口 
+    serv_len = sizeof(serv_addr);
+    // 绑定IP和端口
+    bind(lfd, (struct sockaddr*)&serv_addr, serv_len);
+
+    // 设置同时监听的最大个数
+    listen(lfd, 36);
+    printf("Start accept ......\n");
+
+    int ret;
+    int maxfd = lfd;
+    // reads 实时更新，temps　内核检测
+    fd_set reads, temps;
+    
+    /*===============================================================*/
+    // 记录要检测的文件描述符的数组
+    int allfd[FD_SETSIZE];   // 1024
+    // 记录数组中最后一个元素的下标
+    int last_index = 0;
+    // 初始化数组
+    for(int i=0; i<FD_SETSIZE; ++i)
+    {
+        allfd[i] = -1;  // 无效文件描述符值
+    }
+    allfd[0] = lfd;     // 监听的文件描述符添加到数组中
+    /*===============================================================*/
+
+    // 初始化监听的读集合
+    FD_ZERO(&reads);
+    FD_SET(lfd, &reads);
+
+    while(1)
+    {
+        // 每次都需要更新，否则select不会重新检测
+        temps = reads;
+        ret = select(maxfd+1, &temps, NULL, NULL, NULL);
+        if(ret == -1)
+        {
+            perror("select error");
+            exit(1);
+        }
+
+        int i = 0;
+        char bufip[64];
+        // 判断是否有新连接
+        if(FD_ISSET(lfd, &temps))
+        {
+            // 接受连接请求
+            clien_len = sizeof(clien_len);
+            int cfd = accept(lfd, (struct sockaddr*)&clien_addr, &clien_len);
+            printf("client ip: %s, port: %d\n",
+                   inet_ntop(AF_INET, &clien_addr.sin_addr.s_addr, bufip, sizeof(bufip)),
+                   ntohs(clien_addr.sin_port));
+
+            // 文件描述符放入检测集合
+            FD_SET(cfd, &reads);
+            // 更新最大文件描述符
+            maxfd = maxfd < cfd ? cfd : maxfd;
+            // cfd添加到检测数组中
+            for(i=0; i<FD_SETSIZE; ++i)
+            {
+                if(allfd[i] == -1)
+                {
+                    allfd[i] = cfd;
+                    break;
+                }
+            }
+            // 更新数组最后一个有效值下标
+            last_index = last_index < i ? i : last_index; 
+        }
+
+        // 遍历检测的文件描述符是否有读操作
+        for(i=lfd+1; i<=maxfd; ++i)
+        {
+            if(FD_ISSET(i, &temps))
+            {
+                // 读数据
+                char buf[1024] = {0};
+                int len = read(i, buf, sizeof(buf));
+                if(len  == -1)
+                {
+                    perror("read error");
+                    exit(1);
+                }
+                else if(len == 0)
+                {
+                    // 对方关闭了连接
+                    FD_CLR(i, &reads);
+                    close(i);
+                    if(maxfd == i)
+                    {
+                        maxfd--;
+                    }
+                    allfd[i] = -1;
+                    printf("对方已经关闭了连接。。。。。。\n");
+                }
+                else
+                {
+                    printf("read buf = %s\n", buf);
+                    for(int j=0; j<len; ++j)
+                    {
+                        buf[j] = toupper(buf[j]);
+                    }
+                    printf("--buf toupper: %s\n", buf);
+                    write(i, buf, strlen(buf)+1);
+                }
+            }
+        }
+    }
+
+    close(lfd);
+    return 0;
+}
+
+
+
+---------------------------------------------------------------------------------
+
+
+<poll.h>
+
+IO多路转接 
+    这个是 链表结构,  上限大于select, 但是效率还是不高. 
+
+
+poll 结构体:
+    struct pollfd{
+        int   fd;        /* 文件描述符 */
+        short events;    /* 等待发生的事件(宏), 就是我们希望它发生的事件*/
+        short revents;   /* 实际发生的事件(宏), 由内核反馈修改和填写*/
+    };
+    事件 :      想用多个事件的话,需要 | 位操作 
+        读事件,  POLLIN
+        写事件,  POLLOUT
+        错误事件, POLLERR
+
+
+    函数原型:  int poll( struct pollfd* pollfd, nfds_t nfds, int timeout);
+                pollfd 参数: 数组的地址, (是个结构体数组,不是单个结构体).
+                nfds   参数: 数组的最大长度,  数组中最后一个使用的元素下标+1,
+                                - 内核会轮询检测fd 数组的每个文件描述符.
+                timeout参数:  -1 : 永久阻塞
+                             -0 : 调用完成立即返回
+                             >0 : 等待的时常 (毫秒)
+
+            返回值: IO 发送变化的文件描述符的个数.
+
+
+    工作模式和select差不多.
+
+
+---------------------------------------------------------------------------------
+
+
+<sys/epoll.h>
+
+IO多路转接
+    epoll 这是个红黑树结构.
+
+epoll 三种工作模式.
+    1.水平触发模式 - 根据读来解释
+        - 只要fd 对应的缓冲区有数据
+        - epoll_wait 返回
+        - 返回的次数与发送数据的次数没有关系
+        - epoll 默认的工作模式
+    2.边沿阻塞触发模式 - ET
+        - fd - 默认阻塞属性
+        - 客户端给 server 发数据:
+            发一次数据 server 的 epoll_wait 就返回一次.
+            不在乎数据是否读完. 有可能读不完数据.
+            如果读不完, 如何全部读出来:
+                while(recv());
+                    数据读完之后 recv会阻塞.
+                    解决阻塞问题
+                        设置非阻塞 - fd
+    3.边沿非阻塞触发模式
+        - 效率最高
+        - 设置非阻塞的方法
+            open()
+                设置flags
+                必须 O_WDRW | O_NONBLOCK
+                终端文件: /dev/tty
+            fcntl()
+                int flag = fcntl(fd , F_GETFL);
+                flag |= O_NONBLOCK;
+                fcntl (fd, F_SETFL, flag);
+        -将缓冲区的全部数据都读出
+            int len;
+            while( (len = recv()) >0){
+                    printf();   //缓冲区内有数据
+            }
+            if( len == 0){      // 无数据
+                    断开连接了, 下树,关闭描述符
+                }
+                else if  (len == -1){        // 出错
+                    if( error == EAGAIN ) {  // 这步判断是必须的,是否缓冲区无数据导致的 -1
+                        缓冲区数据读完; 无动作
+                    }
+                    else{                   // 这就代表程序真的出错了
+                        exit(); 出错退出
+                    }
+                } 
+
+
+
+    ---------
+    -该函数生成一个epoll 专用的文件描述符,初始化一个根结点
+        int epoll_create( int size);
+        参数:
+            size : epoll 上能关注的最大描述符数量,(随便写,如果不够用,函数会自动扩充)
+                    (扩充上限和内存有关, 1GB = 10万 ,2GB = 20万 )
+        返回值: 返回一个根结点文件描述符(epfd).   -1表示失败.
+        
+        主要有用的就是这个返回值. 
+
+    ---------
+    -用于控制某个epoll 文件描述符事件, 可以注册(添加), 修改, 删除. 是拷贝复制,不需要担心内存
+        int epoll_ctl(int epfd, int op, int fd, struct epoll_event* event);
+        参数:
+            epfd: epoll_create 生成的epoll专用的描述符
+            op: 需要执行的操作.
+                EPOLL_CTL_ADD   -注册(添加), 拷贝复制添加,不需要担心内存
+                EPOLL_CTL_MOD   -修改
+                EPOLL_CTL_DEL   -删除 , 这个操作的话,第四个结构体参数给 NULL 就行.不需要结构体.
+
+            fd: 关联的文件描述符,你要操作的文件描述符
+
+            event: 告诉内核要监听什么事件. 以及要操作的fd的属性
+                    这个事件存放在 event.events 中. 使用| 位操作进行多项事件监听.
+                    event.events = EPOLLIN;  - 读
+                                   EPOLLOUT  - 写
+                                   EPOLLERR  - 异常
+                                   EPOLLIN | EPOLLOUT - 读和写
+
+         返回值: 0成功,  -1 失败. 
+
+        -参数结构体原型
+        struct epoll_event {
+            uint32_t     events;   //需要监听的事件
+            epoll_data_t data;      // 一个联合体参数,存放这个节点的详细信息
+        };
+
+        typedef union epoll_data{
+            void    *ptr;    // 自定义的数据类型, 自己定义,如果自己想要更多的信息,就使用这个
+            int       fd;    // 文件描述符, 一般用这个
+            uint32_t u32;    // 无用
+            uint64_t u64;    // 无用
+        };
+
+        范例:
+            int epfd = epoll_create(2000);    // 一个根节点
+            struct epoll_event event;        // 告诉内核需要监控的事件和根节点下挂载的子节点
+            event.events = EPOLLIN;          // 监听读事件
+            epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);     
+                // 把event挂载到epfd根下.对应的描述符是fd, 监听fd的读事件.
+
+
+    --------
+    -等待IO事件发生 - 可以设置阻塞的函数, 委托内核去检测
+        int epoll_wait(                 int   epfd,     // 要检测的句柄.
+                        struct epoll_event* events,     // 用于存放发生IO事件的描述符对应的结构体
+                                     int maxevents,     // 结构体的大小
+                                      int timepout      /* -1永久阻塞, 0不阻塞, >0 毫秒阻塞.*/
+                    );
+
+        返回值: 有多少描述符发生了要检测的事件. 也就是多少个文件描述符发生了变化.
+
+        events这个结构体数据是由函数写入的, 函数需要的数据是我在epoll_ctl() 初始化的时候定义的.
+
+
+
+    -------
+    epoll模型, 思路
+    int main(){
+        //创建监听的套接字
+        int lfd = socket();
+        //绑定
+        bind();
+        //设置监听
+        listen();
+        
+        // epoll树根节点
+        int epfd = epoll_create(3000);
+        //存储发生变化的fd对应信息
+        struct epoll_event all[3000];
+        
+        // init (初始化)
+        //将监听的文件描述符挂到epoll树上
+        struct epoll_event ev;
+        //在 ev中 init lfd信息 (初始化)  , 检测读事件
+        ev.events = EPOLLIN;
+        ev.data   = lfd;
+        epoll_ctl(epfd, EPOLL_CTL_ADD, lfd, &ev);
+
+        while(1){ //委托内核一直检测事件
+                //第一次检测 有没有新连接到达, 返回发生变化的描述符的个数
+            int ret = epoll_wait(epfd, all, 3000, -1);
+                //根据 ret 遍历 all 数组
+            for (int i=0; i<ret; ++i){
+                int fd = all[i].data.fd;                
+                // 有新的连接
+                if( fd == lfd ){
+                    // 收到连接请求 -accept 不阻塞
+                    int cfd = sccept();
+                    // 把 cfd 挂到树上 
+                    ev.events  = EPOLLIN;
+                    ev.data.fd = cfd;
+                    epoll_ctl( epfd, EPOLL_CTL_ADD, cfd, &ev);
+                }
+                // 已经连接的客户端有数据发送过来
+                else{
+                    //只处理客户端发过来的数据, 也就是只处理读操作
+                    if(all[i].events & EPOLLIN){
+                        continue;
+                    }
+                    // 读数据
+                    int len = recv();
+                    if(len == 0){
+                        //客户端关闭了连接
+                        close(fd);
+                        //检测的fd从树上删除
+                        epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
+                    }
+
+                    // 写数据
+                    send();
+                }
+            }
+
+        }
+    
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+范例代码
+
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <ctype.h>
+#include <sys/epoll.h>
+#include <fcntl.h>
+#include <errno.h>
+
+int main(int argc, const char* argv[])
+{
+    if(argc < 2)
+    {
+        printf("eg: ./a.out port\n");
+        exit(1);
+    }
+    struct sockaddr_in serv_addr;
+    socklen_t serv_len = sizeof(serv_addr);
+    int port = atoi(argv[1]);
+
+    // 创建套接字
+    int lfd = socket(AF_INET, SOCK_STREAM, 0);
+    // 初始化服务器 sockaddr_in 
+    memset(&serv_addr, 0, serv_len);
+    serv_addr.sin_family = AF_INET;                   // 地址族 
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);    // 监听本机所有的IP
+    serv_addr.sin_port = htons(port);            // 设置端口 
+    // 绑定IP和端口
+    bind(lfd, (struct sockaddr*)&serv_addr, serv_len);
+
+    // 设置同时监听的最大个数
+    listen(lfd, 36);
+    printf("Start accept ......\n");
+
+    struct sockaddr_in client_addr;
+    socklen_t cli_len = sizeof(client_addr);
+
+    // 创建epoll树根节点
+    int epfd = epoll_create(2000);
+    // 初始化epoll树
+    struct epoll_event ev;
+
+    // 设置边沿触发
+    ev.events = EPOLLIN;
+    ev.data.fd = lfd;
+    epoll_ctl(epfd, EPOLL_CTL_ADD, lfd, &ev);
+
+    struct epoll_event all[2000];
+    while(1)
+    {
+        // 使用epoll通知内核fd 文件IO检测
+        int ret = epoll_wait(epfd, all, sizeof(all)/sizeof(all[0]), -1);
+        printf("================== epoll_wait =============\n");
+
+        // 遍历all数组中的前ret个元素
+        for(int i=0; i<ret; ++i)
+        {
+            int fd = all[i].data.fd;
+            // 判断是否有新连接
+            if(fd == lfd)
+            {
+                // 接受连接请求
+                int cfd = accept(lfd, (struct sockaddr*)&client_addr, &cli_len);
+                if(cfd == -1)
+                {
+                    perror("accept error");
+                    exit(1);
+                }
+                // 设置文件cfd为非阻塞模式
+                int flag = fcntl(cfd, F_GETFL);
+                flag |= O_NONBLOCK;
+                fcntl(cfd, F_SETFL, flag);
+
+                // 将新得到的cfd挂到树上
+                struct epoll_event temp;
+                // 设置边沿触发
+                temp.events = EPOLLIN | EPOLLET;
+                temp.data.fd = cfd;
+                epoll_ctl(epfd, EPOLL_CTL_ADD, cfd, &temp);
+                
+                // 打印客户端信息
+                char ip[64] = {0};
+                printf("New Client IP: %s, Port: %d\n",
+                    inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, ip, sizeof(ip)),
+                    ntohs(client_addr.sin_port));
+                
+            }
+            else
+            {
+                // 处理已经连接的客户端发送过来的数据
+                if(!all[i].events & EPOLLIN) 
+                {
+                    continue;
+                }
+
+                // 读数据
+                char buf[5] = {0};
+                int len;
+                // 循环读数据
+                while( (len = recv(fd, buf, sizeof(buf), 0)) > 0 )
+                {
+                    // 数据打印到终端
+                    write(STDOUT_FILENO, buf, len);
+                    // 发送给客户端
+                    send(fd, buf, len, 0);
+                }
+                if(len == 0)
+                {
+                    printf("客户端断开了连接\n");
+                    ret = epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
+                    if(ret == -1)
+                    {
+                        perror("epoll_ctl - del error");
+                        exit(1);
+                    }
+                    close(fd);
+                }
+                else if(len == -1)
+                {
+                    if(errno == EAGAIN)
+                    {
+                        printf("缓冲区数据已经读完\n");
+                    }
+                    else
+                    {
+                        printf("recv error----\n");
+                        exit(1);
+                    }
+                }
+            }
+        }
+    }
+
+    close(lfd);
+    return 0;
+}
+
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+
+
+epoll 反应堆工作模式
+    在 server -> 创建树的根节点 -> 在树上添加需要监听的节点
+    -> 监听读事件 -> 有返回 -> 通信 -> epoll_wait
+
+    在serv -> 创建树的根节点 -> 在树上添加需要监听的节点
+    -> 监听读事件 -> 有返回 -> 通信(接受数据) -> 将这个fd从树上删除 -> 监听写事件 -> 写操作 -> 
+        fd从树上摘下来 -> 监听fd的读事件 -> epoll_wait
+
+    EPOLLOUT
+        水平模式:
+            struct epoll_event ev;
+                ev.events = EPOLLOUT;  - 检测写缓冲区是否可写
+                epoll_wait 会一直返回, 缓冲区能写数据,该函数会返回, 缓冲区满的时候, 不返回.
+        边缘模式:
+            第一次设置的时候 epoll_wait 会返回一次
+            缓冲区从满 -> 到不满的时候 才会返回一次
+
+
+
+-----------------------------------------------------------
+epoll 反应堆模型
+/*
+ * epoll基于非阻塞I/O事件驱动
+ */
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/epoll.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define MAX_EVENTS  1024                                    //监听上限数
+#define BUFLEN      4096
+#define SERV_PORT   8080
+
+void recvdata(int fd, int events, void *arg);
+void senddata(int fd, int events, void *arg);
+
+/* 描述就绪文件描述符相关信息 */
+
+struct myevent_s {
+    int fd;                                                 //要监听的文件描述符
+    int events;                                             //对应的监听事件
+    void *arg;                                              //泛型参数
+    void (*call_back)(int fd, int events, void *arg);       //回调函数
+    int status;                                             //是否在监听:1->在红黑树上(监听), 0->不在(不监听)
+    char buf[BUFLEN];
+    int len;
+    long last_active;                                       //记录每次加入红黑树 g_efd 的时间值
+};
+
+int g_efd;                                                  //全局变量, 保存epoll_create返回的文件描述符
+struct myevent_s g_events[MAX_EVENTS+1];                    //自定义结构体类型数组. +1-->listen fd
+
+
+/*将结构体 myevent_s 成员变量 初始化*/
+
+void eventset(struct myevent_s *ev, int fd, void (*call_back)(int, int, void *), void *arg)
+{
+    ev->fd = fd;
+    ev->call_back = call_back;
+    ev->events = 0;
+    ev->arg = arg;
+    ev->status = 0;
+    //memset(ev->buf, 0, sizeof(ev->buf));
+    //ev->len = 0;
+    ev->last_active = time(NULL);    //调用eventset函数的时间
+
+    return;
+}
+
+/* 向 epoll监听的红黑树 添加一个 文件描述符 */
+
+void eventadd(int efd, int events, struct myevent_s *ev)
+{
+    struct epoll_event epv = {0, {0}};
+    int op;
+    epv.data.ptr = ev;
+    epv.events = ev->events = events;       //EPOLLIN 或 EPOLLOUT
+
+    if (ev->status == 1) {                                          //已经在红黑树 g_efd 里
+        op = EPOLL_CTL_MOD;                                         //修改其属性
+    } else {                                //不在红黑树里
+        op = EPOLL_CTL_ADD;                 //将其加入红黑树 g_efd, 并将status置1
+        ev->status = 1;
+    }
+
+    if (epoll_ctl(efd, op, ev->fd, &epv) < 0)                       //实际添加/修改
+        printf("event add failed [fd=%d], events[%d]\n", ev->fd, events);
+    else
+        printf("event add OK [fd=%d], op=%d, events[%0X]\n", ev->fd, op, events);
+
+    return ;
+}
+
+/* 从epoll 监听的 红黑树中删除一个 文件描述符*/
+
+void eventdel(int efd, struct myevent_s *ev)
+{
+    struct epoll_event epv = {0, {0}};
+
+    if (ev->status != 1)                                        //不在红黑树上
+        return ;
+
+    epv.data.ptr = ev;
+    ev->status = 0;                                             //修改状态
+    epoll_ctl(efd, EPOLL_CTL_DEL, ev->fd, &epv);                //从红黑树 efd 上将 ev->fd 摘除
+
+    return ;
+}
+
+/*  当有文件描述符就绪, epoll返回, 调用该函数 与客户端建立链接 */
+// 回调函数 - 监听的文件描述符发送读事件时被调用
+void acceptconn(int lfd, int events, void *arg)
+{
+    struct sockaddr_in cin;
+    socklen_t len = sizeof(cin);
+    int cfd, i;
+
+    if ((cfd = accept(lfd, (struct sockaddr *)&cin, &len)) == -1) {
+        if (errno != EAGAIN && errno != EINTR) {
+            /* 暂时不做出错处理 */
+        }
+        printf("%s: accept, %s\n", __func__, strerror(errno));
+        return ;
+    }
+
+    do {
+        for (i = 0; i < MAX_EVENTS; i++)                                //从全局数组g_events中找一个空闲元素
+            if (g_events[i].status == 0)                                //类似于select中找值为-1的元素
+                break;                                                  //跳出 for
+
+        if (i == MAX_EVENTS) {
+            printf("%s: max connect limit[%d]\n", __func__, MAX_EVENTS);
+            break;                                                      //跳出do while(0) 不执行后续代码
+        }
+
+        int flag = 0;
+        if ((flag = fcntl(cfd, F_SETFL, O_NONBLOCK)) < 0) {             //将cfd也设置为非阻塞
+            printf("%s: fcntl nonblocking failed, %s\n", __func__, strerror(errno));
+            break;
+        }
+
+        /* 给cfd设置一个 myevent_s 结构体, 回调函数 设置为 recvdata */
+
+        eventset(&g_events[i], cfd, recvdata, &g_events[i]);   
+        eventadd(g_efd, EPOLLIN, &g_events[i]);                         //将cfd添加到红黑树g_efd中,监听读事件
+
+    } while(0);
+
+    printf("new connect [%s:%d][time:%ld], pos[%d]\n", 
+            inet_ntoa(cin.sin_addr), ntohs(cin.sin_port), g_events[i].last_active, i);
+    return ;
+}
+
+// 回调函数 - 通信的文件描述符发生读事件时候被调用
+void recvdata(int fd, int events, void *arg)
+{
+    struct myevent_s *ev = (struct myevent_s *)arg;
+    int len;
+
+    len = recv(fd, ev->buf, sizeof(ev->buf), 0);            //读文件描述符, 数据存入myevent_s成员buf中
+
+    eventdel(g_efd, ev);        //将该节点从红黑树上摘除
+
+    if (len > 0) {
+
+        ev->len = len;
+        ev->buf[len] = '\0';                                //手动添加字符串结束标记
+        printf("C[%d]:%s\n", fd, ev->buf);
+
+        eventset(ev, fd, senddata, ev);                     //设置该 fd 对应的回调函数为 senddata
+        eventadd(g_efd, EPOLLOUT, ev);                      //将fd加入红黑树g_efd中,监听其写事件
+
+    } else if (len == 0) {
+        close(ev->fd);
+        /* ev-g_events 地址相减得到偏移元素位置 */
+        printf("[fd=%d] pos[%ld], closed\n", fd, ev-g_events);
+    } else {
+        close(ev->fd);
+        printf("recv[fd=%d] error[%d]:%s\n", fd, errno, strerror(errno));
+    }
+
+    return;
+}
+
+// 回调函数 - 通信的文件描述符发生写事件时候被调用
+void senddata(int fd, int events, void *arg)
+{
+    struct myevent_s *ev = (struct myevent_s *)arg;
+    int len;
+
+    len = send(fd, ev->buf, ev->len, 0);                    //直接将数据 回写给客户端。未作处理
+    /*
+    printf("fd=%d\tev->buf=%s\ttev->len=%d\n", fd, ev->buf, ev->len);
+    printf("send len = %d\n", len);
+    */
+
+    if (len > 0) {
+
+        printf("send[fd=%d], [%d]%s\n", fd, len, ev->buf);
+        eventdel(g_efd, ev);                                //从红黑树g_efd中移除
+        eventset(ev, fd, recvdata, ev);                     //将该fd的 回调函数改为 recvdata
+        eventadd(g_efd, EPOLLIN, ev);                       //从新添加到红黑树上， 设为监听读事件
+
+    } else {
+        close(ev->fd);                                      //关闭链接
+        eventdel(g_efd, ev);                                //从红黑树g_efd中移除
+        printf("send[fd=%d] error %s\n", fd, strerror(errno));
+    }
+
+    return ;
+}
+
+/*创建 socket, 初始化lfd */
+
+void initlistensocket(int efd, short port)
+{
+    int lfd = socket(AF_INET, SOCK_STREAM, 0);
+    fcntl(lfd, F_SETFL, O_NONBLOCK);                                            //将socket设为非阻塞
+
+    /* void eventset(struct myevent_s *ev, int fd, void (*call_back)(int, int, void *), void *arg);  */
+    eventset(&g_events[MAX_EVENTS], lfd, acceptconn, &g_events[MAX_EVENTS]);
+
+    /* void eventadd(int efd, int events, struct myevent_s *ev) */
+    eventadd(efd, EPOLLIN, &g_events[MAX_EVENTS]);
+
+    struct sockaddr_in sin;
+    memset(&sin, 0, sizeof(sin));                                               //bzero(&sin, sizeof(sin))
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = INADDR_ANY;
+    sin.sin_port = htons(port);
+
+    bind(lfd, (struct sockaddr *)&sin, sizeof(sin));
+
+    listen(lfd, 20);
+
+    return ;
+}
+
+int main(int argc, char *argv[])
+{
+    unsigned short port = SERV_PORT;
+
+    if (argc == 2)
+        port = atoi(argv[1]);                           //使用用户指定端口.如未指定,用默认端口
+
+    g_efd = epoll_create(MAX_EVENTS+1);                 //创建红黑树,返回给全局 g_efd 
+    if (g_efd <= 0)
+        printf("create efd in %s err %s\n", __func__, strerror(errno));
+
+    initlistensocket(g_efd, port);                      //初始化监听socket
+
+    struct epoll_event events[MAX_EVENTS+1];            //保存已经满足就绪事件的文件描述符数组 
+    printf("server running:port[%d]\n", port);
+
+    int checkpos = 0, i;
+    while (1) {
+        /* 超时验证，每次测试100个链接，不测试listenfd 当客户端60秒内没有和服务器通信，则关闭此客户端链接 */
+
+        long now = time(NULL);                          //当前时间
+        for (i = 0; i < 100; i++, checkpos++) {         //一次循环检测100个。 使用checkpos控制检测对象
+            if (checkpos == MAX_EVENTS)
+                checkpos = 0;
+            if (g_events[checkpos].status != 1)         //不在红黑树 g_efd 上
+                continue;
+
+            long duration = now - g_events[checkpos].last_active;       //客户端不活跃的世间
+
+            if (duration >= 60) {
+                close(g_events[checkpos].fd);                           //关闭与该客户端链接
+                printf("[fd=%d] timeout\n", g_events[checkpos].fd);
+                eventdel(g_efd, &g_events[checkpos]);                   //将该客户端 从红黑树 g_efd移除
+            }
+        }
+
+        /*监听红黑树g_efd, 将满足的事件的文件描述符加至events数组中, 1秒没有事件满足, 返回 0*/
+        int nfd = epoll_wait(g_efd, events, MAX_EVENTS+1, 1000);
+        if (nfd < 0) {
+            printf("epoll_wait error, exit\n");
+            break;
+        }
+
+        for (i = 0; i < nfd; i++) {
+            /*使用自定义结构体myevent_s类型指针, 接收 联合体data的void *ptr成员*/
+            struct myevent_s *ev = (struct myevent_s *)events[i].data.ptr;  
+
+            if ((events[i].events & EPOLLIN) && (ev->events & EPOLLIN)) {           //读就绪事件
+                ev->call_back(ev->fd, events[i].events, ev->arg);
+            }
+            if ((events[i].events & EPOLLOUT) && (ev->events & EPOLLOUT)) {         //写就绪事件
+                ev->call_back(ev->fd, events[i].events, ev->arg);
+            }
+        }
+    }
+
+    /* 退出前释放所有资源 */
+    return 0;
+}
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+
+ 
+UDP 通信    - 面向无连接的不安全报文传输, 无论客户端还是服务端,都只有一个文件描述符(套接字)
+
+    通信流程
+        * 服务器端:
+                1.创建套接字- socket(AF_INET, SOCK_DGRAM, 0);
+                    第二个参数是 SOCK_DGRAM
+                2.绑定IP和端口:bind
+                    fd
+                    struct sockaddr -- 服务器
+                3.通信
+                   -接受数据: recvfrom();
+                        ssize_t recvfrom(int sockfd, void* buf, size_t len, int flags, 
+                                            struct sockaddr* src_addr, socklen_t* addrlen);
+                            //同 accept的 2,3个参数使用方法相同.   
+                            参数: sockfd  - 文件描述符
+                                     buf - 接受数据缓冲区
+                                     len - buf的最大容量
+                                   flags - 0
+                                src_addr - 另一端的IP和端口, 传出参数.
+                                addrlen  - 传入传出参数, src_addr的大小
+
+                  -发送数据: sendto
+                        ssize_t sendto(int sockfd, const void* buf, size_t len, int flags,
+                                        const struct sockaddr* dest_addr, socklen_t addrlen);
+                            参数:   sockfd - socket函数创建的套接字
+                                      buf - 存储发送的数据
+                                      len - 发送的数据的长度
+                                    flags - 0
+                                dest_addr - 另一端的IP和端口
+                                  addrlen - dest_addr的长度
+
+                  -UDP服务器端: 需要一个套接字通信
+        * 客户端:
+                1.创建一个用于通信的套接字: socket
+                2.通信
+                    -发送数据: sendto()
+                        需要先准备好一个结构体: struct sockaddr_in
+                            存储服务器的IP和端口
+                    -接受数据: recvfrom
+
+        *UDP 的数据是不安全的, 容易丢包
+            优点: 效率高.
+
+
+---------------------------------------------------------
+UDP 服务器范例代码:
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
+int main( int argc, char* argv[]){
+
+    // 创建套接字
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd == -1){
+        perror("socket error");
+        exit(1);
+    }
+
+    //fd 绑定本地ip和端口
+    struct sockaddr_in serv;
+    memset(&serv, 0 , sizeof(serv));
+    serv.sin_family = AF_INET;
+    serv.sin_port   = htons(9999);
+    serv.sin_addr.s_addr =  htonl(INADDR_ANY);
+    int ret = bind(fd, (struct sockaddr*)&serv,sizeof(serv));
+
+    if( ret == -1){
+        perror("bind error");
+        exit(1);
+    }   
+
+    // 通信
+    struct sockaddr_in client;
+    socklen_t   client_len = sizeof(client);
+    memset( &client, 0, client_len);
+    char buf[1024] = {0};
+    while(1){
+        int recvlen = recvfrom(fd, buf, sizeof(buf), 0,
+                (struct sockaddr*)&client, &client_len);
+        if( recvlen == -1){
+            perror("recvfrom error");
+            exit(1);
+        }
+        
+        printf("recv buf:%s\n",buf);
+        char ip[64] = {0};
+        printf("New client IP:%s, Port:%d\n",
+                inet_ntop(AF_INET, &client.sin_addr.s_addr, ip, 
+                    sizeof(ip)),
+                ntohs( client.sin_port));
+
+        //给客户的回写数据
+        sendto(fd, buf, strlen(buf)+1, 0, (struct sockaddr*)&client, 
+                client_len);
+
+    }
+    close (fd);
+    return 0;
+}
+
+---------------------------------------------------------
+UDP 客户端范例代码:
+
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+#include <errno.h>
+
+int main(int argc, char* argv[]){
+    // create socket
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if ( fd == -1){
+        perror("socket error");
+        exit(1);
+    }
+    //初始化一个服务器的IP和端口的结构体
+    struct sockaddr_in serv;
+    memset(&serv, 0, sizeof(serv));
+    serv.sin_family = AF_INET;
+    serv.sin_port = htons (9999);
+    inet_pton(AF_INET, "127.0.0.1", &serv.sin_addr.s_addr);
+
+    // 通信
+    while(1){
+
+        char buf[1024] = {0};
+        fgets(buf, sizeof(buf), stdin);
+        // 数据的发送
+        sendto(fd, buf, strlen(buf)+1, 0, 
+                (struct sockaddr*)&serv, sizeof(serv));
+        
+        // 等待服务器发送数据过来
+        recvfrom( fd ,buf, sizeof(buf), 0 ,NULL, NULL);
+        printf("recv buf:%s\n",buf);
+    }
+    close(fd);
+
+    return 0;
+}
+-----------------------------------------------------------------------------------------

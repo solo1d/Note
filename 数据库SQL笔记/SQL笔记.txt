@@ -1,0 +1,96 @@
+对数据库的操作就是添删改查 (CURD)  : C create(添加), U updata(修改) , R read(查询) , D delete(删除).
+
+https://sqlbolt.com/   // 官方数据库实验网址
+
+
+数据库中所有的关键字,就是语言关键字,全部都是不区分大小写的, 大写和小写都能正确执行.
+
+查询语句:  
+
+  SELECT 列名 FROM 表名  WHERE 条件和字句;   // 标准格式  (列名也称字段)
+  SELECT col,col 找什么   FROM  table 从哪找?  WHERE  col条件? 是什么
+
+
+  所需的列名写在 SELECT 之后, FROM 关键字指出从哪个表中检索数据. 会返回表中的所有行.(数据没有过滤.而且没有排序).
+
+  就是说 我查询某个表中的某个字段.
+
+ 例子:
+ SELECT prod_name 
+ FROM Products 
+ WHERE 1;   // 从 Products表中检索一个名为prod_name的列, 无条件匹配;
+
+ SELECT name 
+ FROM Products 
+ WHERE name LINK "wa% ao%" ;  
+ //模糊匹配字符串name 所对应的值.
+
+ SELECT age 
+ FROM Products 
+ WHERE  10 >= age >= 30 ;    
+ //范围匹配数值,在10和30之间.
+
+ SELECT len 
+ FROM Products 
+ WHERE  IN(177,179,182);  
+ // 集合匹配,在这个集合中匹配,对应之后才会显示.
+
+ SELECT len 
+ FROM Products 
+ WHERE NOT IN(178,180,181);  
+ // 集合匹配,在这个集合中匹配,不对应之后的值才会显示.
+
+ SELECT Director,age
+ FROM Products 
+ WHERE Director = "just" 
+ ORDER BY age  DESC LIMIT 3;
+ // ORDER是排序 BY 根据age 来进行从小到大排序正序 , DESC LINIT 是排序的参数 他限制在顶部出现的几个数据.
+
+SELECT Director,COUNT(Director) AS temp 
+FROM Products
+WHERE 
+GROUP BY Director
+ORDER BY temp DESC, Director ASC  LIMIT 3;
+// 根据Director 进行分组,把重复的合成一个来显示,通过 COUNT() 来显示后面会出现计数,这个数据结构同名有多少个.
+//   后面的AS 来修改了计数单词的别名,变成了自定义的temp. 
+//   后面的ORDER BY 表示来根据temp 这个别名数量来进行排序, 然后由 DESC修饰成 从大到小的倒序, 
+//   Director ASC 表示将这个字符串进行正序排序 由小到大 (A小 B大, a小 b 大, 不是ASCII码)
+//   后面的LIMIT 3 表示只要前面最顶的三个数据, 最大的三个数据.
+
+
+
+SELECT *
+FROM movies LEFT JOIN Boxoffice ON movies.id = Boxoffice.movie_id
+WHERE 1;
+// 连接两个表,形成一个临时表来方便进行查找, 连接 movies 和 Boxoffice  , LEFT JOIN 以左侧表(movies) 为基准,
+//   连接(Boxoffice)表, ON movies.id = Boxoffice.movies_id  表示按照id和movies_id 来当做基准数.
+//      当这两个id 完全相等才会连接在一起的.     (查找完成后 这个表就会销毁)
+
+
+SELECT DISTINCT vend_id
+FROM Products;
+//  DISTINCT 关键字 它指示数据库返回不同的值,将相同的值合并,只显示一个. 作用于后面的所有列.
+
+
+SELECT vend_id    -- 这是注释
+FROM Products;
+//  注释的通用形式,一般都会获得支持.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

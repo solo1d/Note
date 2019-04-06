@@ -1,0 +1,19 @@
+
+*第一篇~:技术
+    基于 Policy 的 Class 设计:
+        policies(方针)和policy classes(方针类) 它们是一种重要的 classes(类)设计技术,能够增加程序库的弹性并提高复用性. 简而言之,就是具备复杂功能的 policy-based class(基于策略的类)有许多小型 classes(称为 policies) 组成.
+	由于可以混合并匹配各种 policies,所以籍由小量核心基础组件的组合,你可以完成一个行为集.
+	所谓软件设计就是解域空间中的一道选择题.
+	遇到设计问题时的解决方法很多,比如Events,Objects,Observers,Callbacks,Vrtuals,Templates.
+
+
+
+
+
+
+
+
+
+
+
+

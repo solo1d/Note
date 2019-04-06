@@ -1,0 +1,22 @@
+﻿IDE:
+    for MAC: Xcode . CLion . GCC
+    for WIN: vs2017 . block . GCC
+编辑器: 
+    for MAC: Sublime Text . VIM
+    for WIN: notepad++ . VIM
+网络工具: 
+    for MAC: goPanel 2 . 
+    for WIN: 
+
+服务器工具: 
+    for MAC: 
+    for WIN: CRTPortable .
+
+其他工具: 
+    for MAC:  GitHub  . Git . Paragon NTFS of MAC . Fear Download Manager . 有道云笔记 .
+
+    for WIN:  GitHub  . Git . panDownload . 有道云笔记 . 
+
+平面设计工具:
+    for MAC: Ai . PS . AP . Final Cut Pro . Principle . Sketch . iThoughtsX 
+    for WIN: 

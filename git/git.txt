@@ -1,0 +1,299 @@
+man git-config   查看配置文件帮助
+
+将不加入版本系统控制的文件名写入下面名字的这个文件, 就可以自动排除在外.支持正则表达式,和通配符. 空目录自动忽略.
+    使用前需要在工作目录的根目录下创建这个 忽略文件
+        .gitignore                  # 注释
+           文件内容: *.b      作用: 忽略所有.b结尾的文件,不纳入到版本控制系统中.
+                   !a.b      作用: a.b除外, 这个文件可以纳入到版本控制系统中.
+                   /TODO     作用: 仅忽略根目录下的完全同名文件, 但不包括其他目录的. 例 sub/DODO  是不忽略的.
+                   build/    作用: 忽略 build 目录下的所有文件. 包括二级和多级目录.
+                   doc/*.txt 作用: 忽略doc目录下的.txt文件,但不包括doc目录下的二级目录中的同名文件.doc/a/a.txt
+                   /*/a.txt        忽略所有二级目录中的所有a.txt文件. 但不包括三级目录和多级目录.
+                   /**/*.txt       忽略所有目录中的所有.txt文件. 包括所有的多级目录.
+
+
+git 常用命令
+    获取状态
+*       git status  获取当前工作的处于一个什么样的状态.
+----
+    获得版本库
+*       git init    初始化一个新的仓库
+*       git clone   将远程版本库复制一份到本地
+----
+    版本管理
+*       git add     将当前已修改的文件纳入到暂存区当中
+                $git add text.txt   将text.txt 这个文件纳入到暂存区中.
+                $git add .          将工作目录下所有的文件全部纳入到暂存区, 非常常用
+
+*       git commit  将暂存区当中的文件纳入到版本库中
+                $git commit -m '提交注释和说明'       提交和注释说明
+                $git commit --amend  -m '修正说明'   修改上次一提交的注释和说明, 而且不是二次提交.
+                $git commit -am '提交注释和说明'      提交所有已经修改的文件, 可以省略git add. 这步.不可以对新文件使用
+                $git commit --amend --reset-author   重新修改提交的用户配置信息.
+
+
+*       git rm      删除工作目录当中一个特定的文件, 将被删除的文件纳入到暂存区.
+                $git rm text.txt       删除工作区的text.txt文件, 删除后可以直接提交.
+                        若想恢复被删除文件,需要执行下面两个动作.
+                             $git reset HEAD text.txt          将待删除的文件从暂存区恢复到工作区.
+                             $git checkout -- text.txt         将工作区删除的这个修改丢弃. 文件恢复结束.
+                        如果是使用系统的 rm 来删除的话 需要多进行一步, 将修改纳入到暂存区.在执行上面两步.
+                             $git add text.txt
+
+*       git mv      和系统mv相同,然后将操作纳入暂存区. 这个动作对于git来说就是删除一个文件,然后复制一份新名字文件.
+                $git mv old.txt new.txt     将old.txt 重命名为 new.txt
+                        若想恢复成原名,需要执行下面两个动作
+                             $git reset HEAD old.txt      将待改名的文件从暂存区恢复到工作区.
+                             $git reset HEAD new.txt      将新文件的文件从暂存区恢复到工作区
+                             $git checkout -- new.txt     将工作区的修改操作丢弃,文件恢复完成.
+                        这个时候会出现一个新文件和一个旧文件 同时存在, 可以删除一个. 然后再拉入暂存区.
+                          如果是使用系统的mv 命令来改名, 也需要多一步操作
+                             $git add new.txt old.txt      这样git就会自动识别到,这是个重命名操作.
+
+
+
+*       git reset --hard HEAD^    回退到当前分支的上个版本,固定格式
+                $git reset --hard HEAD^^    回退两个版本.
+                $git reset --hard +哈希字串   回退到 哈希子串(commit ID)的版本, 曾经版本去 git reflog 中找.
+                $git reset --hard HEAD~2    也是回退两个版本
+        
+*       $git reset HEAD +文件  将之前添加到暂存区的内容从暂存区移除到工作区.
+
+
+
+----
+    查看信息
+        git help     获取帮助
+        git log      查看提交日志
+                 $gie log -4      查看最近4条提交的日志消息.
+                 $git log --pretty=oneline    查看简短的日志, 只显示ID 和提交说明.
+                 $git log --pretty=format:"%h - %an,%ar : %s"    定制格式显示日志.
+                 $git log --graph       图形化显示日志.
+        
+        git reflog      操作日志和曾经版本的 commit ID, 回退版本和提交信息都可以去这里找.
+
+        git diff        比较版本库和暂存区以及工作区文件的差别
+                $git diff        比较暂存区文件和工作区文件之间的差别, -源文件, +目标文件
+                $git diff HEAD   比较当前分支的版本库最新提交文件和工作区文件的差别, -版本库 +工作区, 可以换成commit ID
+                $git diff --cached  +ID    比较当前版本库和暂存区之间的文件差别,  ID是commit ID ,也可以不写
+
+
+        git blame +文件名    显示修订版和作者上次修改文件的每一行
+
+----
+    远程协作
+        git pull    将远程版本库的文件拉取到本地
+        git push    将本地版本库的内容推送到远程
+
+----
+    修改配置文件
+        git config --级别    包括 global用户级(在~/.中), local仓库级(在.git中), 文件名: config ,仓库优先级最高
+               $git config --global user.name  "名字"     添加用户到用户级家目录中.
+               $git config --lobal user.email "邮箱"      添加用户的邮箱到仓库目录中.
+
+----
+    分支
+*       git branch       查看版本库中所有的分支, 前面有*号的表示当前所在的分支.
+*       git branch +名字  创建新的分支
+*               $git branch new_branch     创建一个新分支, 名字是 new_branch
+*
+*       git branch -d +名字    删除某个分支
+*               $git branch -d  new_branch   删除这个分支
+*               $git branch -D  new_branch   强制删除这个分支,忽略未合并错误.
+        
+*       git branch -m 旧分支名字  新分支名字    修改分支名字
+*
+*       git branch -v    显示当前所处的分支的最后一条提交记录和消息.
+        git branch -av   显示当前分支,网络分支,和commit号,库信息.
+*
+
+
+
+ *       git checkout +名字   切换到某个分支
+ *               $git checkout new_branch    切换到 new_checkout 这个分支上
+ *               $git checkout -- test.txt   丢弃掉相对于暂存区中最后一次添加的文件内容所做的变更.
+ *       git checkout -b new_branch2      创建一个新分支, 同时切换到这个分支.
+
+
+
+
+        git stash save '说明'    将当前工作区的内容保存起来,但是和提交有区别
+            $git stash save '临时存储'    保存了一个工作区现场, 备注是 临时存储
+            $git stash list              查看保存的列表, 0号永远是最新的, 按时间顺延 新小 旧大
+            
+            $git stash apply             恢复最新的现场, 也就是0号.但不会删除list中的记录.需要手动删除
+            $git stash apply stash@{1}   恢复列表中 1 号那个记录的现场, 而且不会删除.
+            $git stash pop               恢复最新的现场,  还是0号, 但是会删除list中的记录.
+            
+            $git stash drop stash@{0}    手动删除 0 号记录.
+
+----
+    合并
+        git merge +分支名字    合并分支 到 我目前所在的分支中(快进操作). 然后这两个的内容都与 分支名字 相同.
+                $git merge new_branch    将new这个分支的内容,合并到我目前所在分支中.
+            合并的时候可能会出现冲突, 当合并命令执行完之后, 需要手动去发生冲突的文件中改. 修改完成后再执行下面命令.
+                    $git add  + 冲突的文件
+                    $git commit
+
+        git merge --on-ff +分支  重新建立一次新的提交, 将本分支和后面的参数分支进行合并, (新提交,而不是快进)
+                    $git merge --on-ff new_branch2    两个分支合并后, 进行一次新的提交.
+
+
+---
+    标签
+*       git tag     标签命令,一般是正式版本
+            $git tag           会弹出标签列表
+            $git tag -l '内容'  查找标签,内容可以使用通配符,  一般是 v*.* 什么的
+            
+            $git tag v1.0                   创建一个轻量级标签
+            $git tag -a v2.0 -m '标签说明'    创建一个标签 并且添加说明
+
+            $git tag -d +标签名     删除v1.0 这个标签
+
+
+----
+    推送到远程版本库
+            推送之前要先在工作目录创建和编写 README.md 文件.来初始化.
+        gitHub的操作:  
+                首先在网页端点击创建仓库(new repository), 
+                    Repository  是仓库名(会作为url的一部分,就是网址)
+                    Description 项目说明
+                
+             https的设置内容:
+                网页创建完成之后的操作:
+*                   $git remote add origin https://github.com/solo1d/gitlecture.git
+                      #使用git远程命令, 添加一个远程地址, origin 代表后面的一串地址(远程仓库).后面命令用origin代替网址
+*                   $git push -u origin master
+                      #将本地的master 这个分支上推送到远程, 并且将远程的master与本地的master做一次关联.
+                  然后会弹出验证界面
+                    Username for 'https://github.com':  后面是我的账户, 286233475@qq.com
+                    Password for 'https://solo1d@github.com':  后面是我账户的密码
+                  验证通过后会自动上传 而且提示.
+                    验证之后可以使用 $git push 来将本地的 master 主分支进行推送.
+                #https完成
+             
+*            ssh 的设置内容:
+                网页创建完成之后的操作:
+                    选择 SSH 连接, 然后复制后面的内容 一般是:   git@github.com:solo1d/gitlecture.git
+                      然后使用添加一个远程地址.
+*                      $git remote add origin git@github.com:solo1d/gitlecture.git
+                        #使用git远程命令, 添加一个远程地址, origin 代表后面的一串地址(远程仓库).后面命令用origin代替网址
+                    * 然后生成自己的公匙和私匙
+*                      $cd ~/.ssh  && ssh-keygen
+                         #然后两下回车就可以生成, 掠过的内容主要是需要密码. 可以回车跳过的,然后就生成了两个文件.
+                        接着打开生成的公匙文件(id_rsa.pub), 复制其中的内容, (私匙绝对不能拿出来. 文件内容短的是公匙)
+                    随后打开网页来到项目页面, 进入Settings 中的 Deploy keys 的页面, 来设置公匙
+                        点击 Add deploy key 来添加. *而且一定要把下面的 'Allow write access' 选上, 这是写入权限.
+                           # key 填写 公匙的内容, (公匙内容比私匙短)
+                    紧接着输入以下命令,检测显示与我这个本地仓库有关联的远程.
+*                       $git remote show origin 
+*                       $git push -u origin master
+                            #推送命令, 如果成功了就表示没问题了, 如果出错那么就是远程钥匙出了问题.
+                #ssh完成.
+
+
+        ----
+            本地下的远程版本库操作
+
+*               $git remote show         显示与我这个本地仓库有关联的远程名称.
+*               $git remote show origin  与本地相关联的 origin 的详细信息. 和对应关系,全部详细的罗列出来.
+                        # Fetch URL 是拉取地址(远->本).   Push 是推送地址.(本->远)
+
+*           $git clone +网址(ssh的)     将远程仓库的所有内容克隆到本地.需要在一个新文件夹内使用.
+*               $git clone +网址 +字符串     将远程仓库克隆到后面字符串的文件夹内,就是改名字.
+
+*           $git fetch     将远程的修改拉取到本地 并更新本地的远程分支. 但是他不会执行合并操作.(git merge)
+
+
+
+
+------
+
+$git pull 和 $git push 原理: 它连续执行两个命令. git fetch 和 git merge origin/master 两个操作.
+
+
+
+
+
+
+master 是主分支.常用与发布系统和生产版本的分支
+
+git有三个区域  工作区(work), 暂存区(stage), 版本库(master).
+
+git文件状态
+    文件的三种状态 , 同时有且只有其中一种状态.
+        已修改 modified
+        已暂存 staged
+        已提交 committed
+
+    git文件
+        已被版本库管理的文件.
+    已修改
+        在工作目录修改git文件
+    已暂存
+        对已修改的文件执行git暂存操作, 将文件存入暂存区
+    已提交
+        将已暂存的文件执行git提交操作, 将文件存入版本库
+
+
+HEAD 指向的是当前分支.
+master 指向提交.
+
+
+git 分支的命名规范 建议
+    1. Gitflow   这是个模版, 配置很复杂.
+    2. 基于Git分支的开发模型.
+        develop 分支, (频繁变化的一个分支, 供开发人员之间协作开发,代码推送,代码合并)
+        test    分支, (供测试与产品人等人员使用的一个分支, 变化不是特别频繁, 是从 develop 分支合并过来的)
+        master  分支, (生产发布分支, 变化非常不频繁的一个分支, 是从test分支合并过来的 )
+        bugfix (或 hotfix) 分支 ( 生产系统当中出现了紧急Bug, 用于紧急修复的分支, 然后 拉取合并都在 master 分支上)
+
+关于Git分支最佳实践:
+    1. 通常来说,Git分支会有以下几种
+        1.1 master 分支
+        1.2 test 分支
+        1.3 develop 分支
+        1.4 hotfix 分支
+
+Git合并原则:
+    Git遵循一个三方合并原则
+        
+
+
+
+
+
+
+
+
+------
+    $gitk     GUN管理界面,  如果启动失败 那么运行这个命令: brew cask install tcl
+    $git gui   也是自带的图形管理界面.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

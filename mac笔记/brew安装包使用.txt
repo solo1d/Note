@@ -1,0 +1,27 @@
+
+打开这个网址
+https://brew.sh/index_zh-cn
+
+复制网页上安装命令 ,然后放入命令行运行
+安装过程很长,需要多多等待.
+
+
+安装完成后 ,安装这个主体 apple,的命令
+brew install wget
+
+
+有时候会卡在 
+Updating Homebrew...
+
+这个时候按 control + c 就可以了,  这是在等待我确认安装的指令.
+
+ 
+它的用法
+
+brew update  更新brew；
+
+brew install {应用名，如git} 安装软件
+
+brew cask install {应用名，如git} 也是下载安装，与上面的区别，请查看https://www.zhihu.com/question/22624898
+
+更多用法请 brew help

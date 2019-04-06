@@ -1,0 +1,8 @@
+终端命令；
+
+defaults write NSGlobalDomain ApplePressAndHoldEnabled -boolean false
+
+
+或者
+
+defaults write -g ApplePressAndHoldEnabled -bool false

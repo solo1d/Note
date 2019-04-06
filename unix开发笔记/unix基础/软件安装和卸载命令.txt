@@ -1,0 +1,18 @@
+
+
+软件的安装和卸载: apt(ubuntu下的), dpkg , 
+    在线安装
+    安装: sudo apt-get install "包名"
+    卸载: sudo apt-get remove  "软件的名字或安装的包名"
+    软件列表更新: sudo apt-get update     (更新列表,不是更新软件版本)
+    清空缓存: sudo apt-get clean         (清除安装软件时下载的缓存安装包文件)
+
+    离线安装(deb格式软件安装包)
+        安装: sudo dpkg -i xxx.deb
+        卸载: sudo dpkg -r 软件的名字
+
+    源码包安装: 
+        查看源码包内的"README" 这个文件, 里面详细介绍了安装步骤和使用规则.
+        一般都是  ./一个脚本文件  然后  make    ,然后 sudo make install .
+
+

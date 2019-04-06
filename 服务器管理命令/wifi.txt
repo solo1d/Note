@@ -1,0 +1,11 @@
+如果无法使用ssh 连接那么需要在 根目录 / 下添加一个名为 SSH 的空文件
+
+ifconfig
+
+sudo vim /etc/wpa_supplicant/wap_supplicant.conf
+
+添加如下信息:  wifi的账户名和密码 /要静态ip
+network={
+	ssid= ""	
+	psk=""
+}

@@ -1,0 +1,901 @@
+有用的函数,不好记忆的函数,还有 一些经常使用的英文,我都会记录在这里: ** 定位(函数格式英文).(函数部分)
+mac默认字体 menlo 
+  一天:day   小时:hours  分钟:minutes_缩写min  秒:seconds_缩写sec   毫秒:ms   
+
+gcc 命令部分:
+  cpp  .cpp   预处理器,编译预处理,文本转换到include.  同时编译错误也会更加人性化
+  g++ .cpp  --save-temps  保留编译过程中的所有文件
+  g++ .cpp  -Wall   输出所有可能的wall(错误),基本上所有的编译都应该带这行命令.
+                    如果出现 wall 都应该解决掉. 这是个不稳定单不影响编译的错误.
+文件名后戳部分:
+  .ii    编译预处理指令结束后的文件,可以理解成把.h 的内容都放入到了.cpp中. 
+  .o   目标代码
+  .s    汇编代码
+  .out/.exe   最终可执行的程序
+ 
+英文部分:
+a:
+also  同样.也.并且	*	assign  分配
+argument  参数.实参	*	argument_list 参数列表
+alternative  替代	*	allowed  允许
+array  数组		*	anonymous union 匿名共用体
+arithmetic  算数		*	automatic 自动
+alization  实现		*	assignment  赋值
+alias  别名		*	aspect  方面
+application programmer  应用程序员
+assemble  组合.集合	*	argumentlist  参数列表
+ambiguous  二义性	*	arithmetic type  算数类型
+address  地址		*	alias declaration  别名声明 
+arithmetic conversion  算数转换
+automatic object  自动对象	account  账户
+assert  断言.调试预处理宏	*	abstraction  抽象
+ambiguous call  二义性调用*	abstraction data type 抽象数据类型
+
+
+b:
+because  因为		*	binding  联编.绑定
+block  块.语句块		*	break  退出
+black  黑色		*	bottom  底部
+behavioral  行为		*	behaviors set  行为集
+based  基于 		*	base classes  基础类
+built in type  内置类型	*	block of statements  语句块
+buffer  缓冲区		*	built-in type  内置类型
+base  基本		*	base type  基本数据类型
+buffer overflow  缓冲区溢出
+begin  开头		*	best  最佳
+best match  最佳匹配	*	body  体.身体
+
+c:
+carriage return  回车	*	comments  评论.注释
+call  调用		*	constant  常量
+create  创建		*	can  可以
+coding  编码		*	constant  常数
+compound  复合		*	compound type  复合类型
+cycle  循环		*	condition 条件
+Compound statement  复合语句	class  类
+comma  逗号		*	continue  继续
+comparison  比较		*	clock  时钟
+character  字符		*	echo  回应
+echo the character  回应的字符	classes  类
+count  数		*	code block 代码块
+code  代码		*	cities  城市
+core elementary components  核心基本组件
+components  组件		*	constraints  约束条件.规范
+customize  定制		*	copy  拷贝
+cechanics  技术		*	creation mode  生成模式
+creation  生成		*	continue  继续.循环
+continue  继续		*	curly brace  花括号
+compile  编译		*	const pointer  常量指针
+character string literal  字符串字面值常量
+convert  转换		*	checking  检查
+const expression  常量表达式	container  容器
+compiler extension  编译器拓展
+conversion  相互转换	*	cast  计算
+continue  持续		*	clause  子句
+call by reference  传引用调用
+call by value  传值调用	*	compilation  编译
+candidate function  候选函数
+
+
+
+d:
+definition  定义		*	defined  定义
+declare   声明		*	declaration  声明
+displays  显示		*	done  完成
+developer 开发人员	*	directive  指令
+delete    删除		*	dereferencing  解除引用
+dynamic  动态		*	declaration-statement expression  声明语句表达式
+describes  描述了	*	do stuff  做的东西
+double   双		*	dispatch  调度.分派
+double-dispatch engine  双分派引擎
+design  设计		*	callbacks  回调
+design constraints  设计规范	deep  深层
+device  设备		*	design elements  设计元素
+duration  持续时间	*	definition error 声明错误
+debug   调试		*	data structure  数据结构
+default  默认		*	default initialized  默认初始化
+data  数据		*	declarator  声明符
+data member  数据成员	*	decl 偏差
+default argument  默认实参	data  数据
+data abstraction  数据抽象	demo  演示
+
+
+e:
+entity  实体		*	escape  转义
+easier  更容易.简单	*	exponent  指数
+enumeration  枚举	*	element  元素
+exchange  交换		*	equal  平等的
+engine  引擎		*	events  事件
+explicit specialization  显示具体化
+explicit instantiation   显示实例化
+external  外部		*	expression  表达式
+error  错误		*	edit  编辑
+end-of-file  文件结束符	*	escape  转义.逃跑.
+escape sequence  转义序列*	empty  空.string.操作 
+end iterator  尾迭代器	*	expression  表达式
+expr  表达式		*	exception  异常
+exception-declaration  异常声明
+executable 执行		*	executable file  可执行文件
+encapsulation  封装	*	
+
+f:
+function body  函数体	*	function header  函数头
+fstream  文件输入输出流	*	function  函数
+floor    层		*	front  前面
+free  释放.自由		*	free store 自由储存区
+for init statement condition  初始化语句的条件
+for init statement  初始化语句
+for  为			*	for init  为初始化
+failed  失败		*	file  文件
+thread  线程		*	frameworks  框架
+functions  功能		*	function signature  函数特征标
+function prototype scope  函数原型作用域
+fields  字段		*	
+	
+
+
+g:
+greater  更大的		*	granularity  粒度
+genericity  泛型		*	
+
+h:
+heap  堆			*	here  在这里
+header  头文件		*	header guard  头文件保护符
+handler-statements  处理程序语句
+hide  隐藏		*	hidden name  隐藏名字
+
+
+
+i:
+invisible  看不见的	*	invalid  无效的
+integer  整数		*	input  输入
+istream  输入流		*	initialization  初始化
+installation 安装	*	initialize 初始化
+illegal  非法		*	indirect value  间接值
+ints  整数		*	init  初始化
+inheritance  继承	*	information  信息
+inner  内		*	inner type definition 内隐型别定义
+inline  一致		*	instantiation  模版实例
+indeterminate  不确定的	*	internal  内部
+integrated Developed Environment   IDE.集成开发环境
+items  物品		*	item  项
+integral type  整型	*	identifier  标识符
+inner 内层		*	inner scope 内层作用域
+in scope  在作用域内	*	iterator  迭代器
+index  索引		*	implicit conversion 隐式转换
+inline function 内敛函数	*	interface  接口
+implementation  实现	*	
+
+
+j:
+jump 跳转到		*	
+
+k:
+
+l:
+languages  语言		*	list  列表
+literal  文字		*	letters  信
+Less  减			*	local  本地.局部
+Local path  本地路径	*	license  许可证
+library  库		*	line  串
+low  底层		*	level  层.水平.标准
+lvalue  左值		*	linkage  链接.链接性
+LIFO  先进后出		*	literal  字面值常量
+lvalue reference 左值引用	*	low-level const 底层 const
+literal type  字面值类型	*	lifetime 生命周期
+local static object 局部静态对象
+local variables  本地变量
+link  链接		*	loop  循环
+
+
+m:
+make  使	.开始.制造	*	means  方法.工具
+message 消息		*	memory 内存
+modify  修改		*	math   数学
+mismatch  不匹配		*	misdeed  错误行为
+Multiple inheritance  多重继承
+Multiple 多个		*	manipulation  处理.操作
+match  匹配		*	matches rvalue  匹配右值
+most specialized  最具体	*	manipiulator  操纵符
+member  成员		*	member function  成员函数
+method  方法		*	macro  宏
+
+n:
+natural_size  自然长度	*	negative 负
+not allowed  不允许	*	note  笔记.注意.注释
+nonportable  不可移植的	*	nonprintable  不可打印
+
+o:
+object  对象		*	original   原始
+output  输出		*	operations 操作
+ostream 输出流		*	optional  指数
+ownership  拥有权	*	observers  检察员
+overloading resolution  重载解析
+operator  运算符		*	outer  外层
+outer scope  外层作用域	*	overflow  溢出
+one past the end 尾元素的下一位置
+off the end  尾后	*	off the end iterator 尾后迭代器
+operand  运算对象		*	overload  重载
+
+p:
+preprocessor  预处理器	*	programming  编程
+prototype  原型		*	program  程序
+procedure  过程		*	public  公共
+pointer  指针		*	problem  问题
+possible  可能的		*	purposes  目的
+physically modify string object  物理修改字符串对象
+plus  加			*	path  路径
+practice  练习		*	policies  政策,方针
+policy classes  政策类,方针类
+policy-based class  基于策略的类
+policy based classes design  基于政策的类设计
+partial template specialization  偏特化
+parameterized types  参数化类型
+partial ordering rules  部分排序规则
+parameter list  参数列表	*	point to 指向
+preprocessor variable  预处理变量
+pose  构成		*	promoted  提升
+program-statements  程序的正常语句
+preprocessor marco  预处理宏
+parameters  参数		*	parameter  形参
+pass  通过.传递		*	
+
+
+q:
+
+r:
+return  返回		*	range  范围
+Relational expression  关系表达式
+expression   表达式	*	reversing  扭转
+replaces  替换		*	recording  记录
+reference  参考.引用	*	rvalue  右值
+rvalue reference 右值引用	*	reference to const 对常量的引用
+raise 引发		*	resolution  确定.决议
+recursion  递归		*	
+
+
+s:
+space  空间		*	start  开始
+stream  流		*	show  显示
+style  风格		*	string 字符串
+statements  语句.声明	*	syntax  语法
+statement  声明		*	subroutine  子程序
+set  设置		*	sign  标志 
+scope  作用域		*	stack  堆栈
+store  存储		*	static 静态
+static binding  静态联编	*	symbols  符号
+syntactic  句法		*	separator  分隔符
+size  大小		*	sentinel  哨兵.定位标记
+sentinel character  哨兵字符
+signal  信号		*	successful  成功的
+should be   应该是	*	structural  结构
+safety  安全		*	solution space  解域空间
+smart pointer   智能指针	*	smart  智能
+static type safety  静态型别安全性
+singleton  单例		*	state  状态
+state manipulation  状态处理
+scales  扩张		*	structure  结构体
+signature  特征		*	same  相同
+stencil  模版		*	source file  源文件
+standard   标准		*	standard library  标准库
+standard error  标准错误	*	sales  销售
+sequence  序列		*	specifier  说明符
+Secret  机密.秘密.秘诀	*	separate  分离 
+separate compilation 分离式编译
+statically typed  静态类型	safe 安全
+statement  语句
+
+
+t:
+terminate  终止		*	tag  标记
+tempporary  临时量	*	type 类型
+takes 取得		*	take  拿.取
+touch 触摸		*	tools  工具
+traditional  传统的	*	than  比
+template  模版		*	test  测试
+top  顶部		*	temp  临时
+thread  线程		*	thread safety  多线程安全
+temporary secretary classes  临时秘书类
+terminal  终端.命令行.	*	template prototype  模版的原型
+type error  类型错误	*	type specifier  类型说明符
+type checking   类型检查	*	top-level const 顶层 const
+type alias  类型别名	*	
+
+u:
+used  使用过的,习惯于	*	uninstall  卸载
+unsigned  无符号		*	use  使用
+uni_code  统一编码	*	uninitialized variable 未初始化的变量
+undefined  未定义的	*	uninitialized 不被初始化
+
+v:
+value  值		*	visible   可见
+valid  有效的		*	variable  变量
+vector  向量.另一种动态数组*	virtuals  虚函数
+viable  可行的		*	viable function  可行函数
+
+w:
+white space  空白	*	width  宽度
+won  赢得了		*	won`t  不会
+word 词			*	words  单词
+warning   警告		*	wreapped around  环绕
+
+x:
+
+y:
+year  年			*	
+
+z:
+
+
+函数格式英文表示部分:
+命名约定 : 1.变量名使用驼峰式大小写风格;
+          2.类型名使用Pascal大小写风格;
+          3.使用动词来命名函数与方法，并采用Pascal大小写风格；
+          4.指针或者智能指针名以p开头（在为成员变量，全局变量和静态变量所加的前缀之后);
+          5.不允许使用否定含义的bool变量名；
+          6.返回true或者false的回答问题的函数应该像个问题一样命名;例如lsEmpty(),而不是Empty.
+          7.选择易读的描述性的名字；
+          8.常量名大写！
+b_ 布尔值, p_ 指针, c_ 单个字符, s_ 字符串, n_ 常量整数或变量整数, str或sz 空字符结束字符串, f_ 函数, m_ 成员变量, g_ 全局变量, s_ 静态变量, f_ 文件指针, t_模版, 
+
+
+  new 运算符 分配内存 定义格式:
+    type_name * p_name = new type_Name
+     // 类型名 * 指针名 = new 类型名     (可以创建动态结构)
+     // 例:  int * p_name = new int;       *p_name = 100;  //动态指针
+     //      int * p_name = new int [10];     //动态数组
+     // 使用结束后需要 delete p_name  来释放动态指针内存
+     //              delete [] p_name   来释放动态数组
+     // 数据存在内存池中.自由空间或堆.
+  
+  new 为数组分配内存的通用格式:
+    type_name * p_name = new type_name [num_elements];
+     // 类型名 * 指针名  = new 类型名 [num 个元素] ;
+     // 使用 delete [] p_name  释放动态数组内存
+
+  new 创建动态结构:
+    structure_name * p_name = new structure_name;
+     // 结构名  * p_name = new 结构名
+     // 使用 delete p_name  释放动态结构内存
+
+
+  正常函数格式表达:
+    type Function_Name(argument_list)  // 类型 函数名(参数列表)
+    {
+        statements    // 语句
+    }
+
+
+  vector 类模版_容器(类似于string 类) 动态数组格式:
+     vector<type_Name>vt_Name(n_elem,type_data); // ****不可隔开
+      vt_Name.push_back(data);    //向容器写入数据
+      vt_Name[0];   // 像使用数组那样使用该类型容器
+      // vector < 类型名 > 对象名 (整数:常量或变量,复合类型的数据)
+      // 需要 <vector> 头文件,存储在 自由存储区或堆
+      // 空模版的情况下.不可以通过下标方式添加数据,必须通过push_back添加.
+      // vector.push_back(data);  向对象末尾添加data元素,(有点担心内存问题)
+      // .empty() ; 如何数组为空则返回真,否则 false
+      // .size(); 返回元素个数.size_type 类型.建议 auto. 否则 vect<int>::size_type;
+      // vector<int(*)(int,int)>aa ;  // 指向函数的是指针容器.
+      // aa.push_back(data);  aa[0](1,2);
+
+
+  array 模版类 静态数组格式:
+     array <type_Name , n_elem > arr_Name
+      // array <类型名 ,整数:常量或变量 > 对象名
+      // 需要 <array> 头文件,存储在 内存区域.也就是栈
+
+  string 字符串类型格式:
+     string s_Name;  getline(s_Name , n_elem); 
+     string s_Name(number,char_type);   // (多少个, 字符)
+      // string 字符串名;  读取字符串输入流( 字符串名, 数量限制{可写可不写});
+      // 可以使用 strcat()添加复制, strcpy ()覆盖添加,strcmp()比较:相等则返回0,
+      // strlen()查看有多少个元素, strstr() 判断s_2是不是s_1的字串:返回出现地址.
+      // 需要包括 <string> 头文件 , s_Name.size(无参数)返回在s_Name中有多少个元素.
+      // 使用 = 号是拷贝初始化,只是数据的副本,  使用 () {} 则是直接初始化.
+      // string::size_type 类型.可以使用auto进行初始化.一般用在for范围循环中.
+      // string s = char * p; // 转换 
+      // const char * p = string.data(); 或者 char * p = (*char) str.data();.//转换
+      // const char * p = string.c_str(); 或者 char * p = (*char) str.c_str(); //转换
+      //   
+
+
+  for 循环格式:
+     for(for-int-statement condition; expression)
+          statement;
+     // for(初始化语句的条件 ; 表达式)
+     //    声明
+  或: for( expression; expression; expression)
+          statement;
+     // for( 表达式 ; 表达式 ; 表达式 )
+     //    声明
+  新 for(C++11) 基于范围的循环:
+    for( declaration : exoression )  
+           statement ;
+     // 可以想象成这种:   for(auto i = 0; i < Num ; i++) cout << string[i];
+
+
+    int iArray[] = {32, -1, 99, 0, 256, 9};
+    for (const auto& e : iArray) {
+        cout << e << ' ';
+    }
+     // 循环将 iArray数组中的值赋给 const auto& e (= const int &).
+     // e 并不是数组,而是 int 类型的数值 
+
+
+   编写延时循环 clock(); 函数
+    clock_t start = clock(); 
+    clock_t delay = 20 * CLOCKS_PER_SEC;
+    while( clock()- start < delay);
+    clock_t the_day = (double)(start-delay) / CLOCKS_PER_SEC;  // 得到相差的时间
+     // 定义两个 clock_t 类型变量, start 拿到运行程序时的时间,
+     //    delay 拿到 20 秒之后的时间,
+     // 循环开始:对比当前时间减去 start 的时间,循环次数不计,什么时候得到比21则退出循环,
+     //     而退出循环时则正好过去了20秒;
+
+
+   别名通用格式:
+     typedef typeName aliasName;
+     // type 类型名  别名
+
+
+   文件 IO 对象:
+     std::ofstream f_touFile;    // 定义一个输出文件(f_touFile) 对象.
+     std::f_touFile.open("aa.txt");   // 通过.open(“接受一个字符串数组”) 打开 aa.txt 文件.
+     std::f_touFile << "写入文件" << endl;   // 关联文件后可以像cout一样使用,只不过是输入到文件.
+
+   递归通用格式类型:
+     void function(argumentlist)   // 无返回值 函数名 (参数列表)
+     {
+          statements1     // 声明1
+          if(test)        // 判断 测试条件
+              recurs (argumentlist)   // 递归调用
+          statements2     // 声明2
+     }
+
+
+   内联函数 inline :
+     inline function_Name(argument_List) { statements };
+      // 内联函数 函数名( 参数列表 ) { 声明 }
+      // 内联函数和正常函数的使用方式相同.内联函数需要在 主函数之前声明 .
+
+
+   按引用传递函数定义:
+     int n_Name1 = 20; void function_Name( const int & n_Name2 );
+     function_Name( n_Name1 );
+      // 创建了一个 n_Name1 的int类型的值,将它引用值传递给函数.
+      // 相当于 n_Name2 = &n_Name1  与指针相同,可以看成是伪指针,一个变量,两个名称.
+      // function_Name( n_Name1 +10) ; // 这种操作是不被允许的,引用会变成别的参数.
+
+
+   建立模板:
+     template <typename t_Name >
+     void f_Name( t_Name & Data_Name1, t_Name & Data_Name2);
+     int main(){};
+     template <typename t_Name >
+     void f_Name( t_Name & Data_Name1, t_Name & Data_Name2)
+      {   
+          t_Name temp_Data;
+          temp_Data = Data_Name1;
+          Data_Name1 = Data_Name2;
+          Data_Name2 = temp_Data;   //该模版的作用是交换 1 和 2 中的数据
+      }
+      // 建立模版必须在第一行指出 template 和 typename 两个关键字.(class 可以替换 typename).
+      // 且样式不可替换,必须要用尖括号指出,类型名可以任意选择.
+      // 模版并不创建任何函数,而是告诉编译器如何定义函数.
+      // 如果两个int 类型数据需要交换,那么编译器将按模版模式创建这样的函数.并用int 代替 t_Name,
+      // 从而运行函数,如果是double 也是一样, double 替换 t_Name.
+      
+    建立类模板:
+    template <class C_name>
+    class Pri
+    {
+        public:   //略
+        private:  C_name t;    //声明一个C_name 类型的私有数据
+     }
+     int main(void)  {  Pri<int> tt ; } // 这样来调用,声明一个 tt 的Pri 类,int 类型的显示模板
+     // 类模板和函数模板没什么太大区别,但必须显示类型初始化,不可以自动推导 (auto)
+     
+  显示具体化:	
+     template <> void f_Name<structure_Name(选填)>(structure_Name1 &a,structure_Name2 &b);
+      int main(void)  {  f_Name(temp_data); } ;
+     template <> void f_Name<structure_Name(选填)>(structure_Name1 &a,structure_Name2 &b)
+      {
+           statements     // 声明
+      }
+     // template 关键字不可少, <> 固定形式,  函数名后尖括号以及内容可有可无,(结构名 引用)
+     // 具体化优先级比 模版高, 比普通函低.
+     // 显示具体化将优先于使用模版隐式生成的具体化
+     // 对于某些特殊类型，可能不适合模板实现，需要重新定义实现，此时可以使用显示具体化.
+     // 必须要有定义才可以.不能只是声明.
+     // 显式具体化用于修改某类型的函数具体功能！​
+     // 模版匹配的方式非常复杂！慎用不同参数个数的模版重载！
+
+  显示实例化:
+     template void f_Name<type_Name>(type_Name, type_Name);
+
+     // 显示实例化标准格式, 并且实例化不可以带函数体的.
+     // 显示实例化只需声明,不需要重新定义.编译器根据模版实现实例声明和实例定义. 
+     // 调用优先级：普通函数>显式具体化>显式实例化>普通模版
+     // 显式实例化用于人为选择特定的类型！
+     // 模版匹配的方式非常复杂！慎用不同参数个数的模版重载！
+
+
+  防止头文件被多次包含解决方案:
+     #ifndef _大写头文件名称_H_
+     #define _大写头文件名称_H_
+        头文件定义内容;
+     #endif
+       // #ifndef 该宏是否被定义,如果已经定义则跳过下面的内容
+       // #endif  自 ifndef 到 endif 中宏 _大写头文件名称_H_ 的定义内容结束.
+
+  迭代器:
+      const vector <int> c_v;
+      vector <int> v;
+      auto a = v.begin() , e = v.end();    //a 的类型是 int
+      auto b = c_v.begin(), c = c_v.end(); //b 的类型是 const int
+     // 由编译器决定 a e 的类型, a 表示v的第一个元素, e 表示 v 尾元素的下一个位置(就是空);
+     // 关键字 .begin()和 .end() 都只能用于支持迭代器的类型的对象.(string,vector)
+     // 它们的返回对象是 v 决定的, 如果是常量那么返回的就是 const_iterator 否则 interator.
+     // 迭代器运算符尽量使用 != 和 == 来进行对比. 类型运算支持并不完整.
+     // 使用 ++  -- 使begin() 指向下一个或上一个元素.
+     // *a 可以通过解引用来获取 a 所指向的值,类似于指针的操作.但区分于指针.
+
+
+  强制类型转换(c++):
+     type 新的变量 = cast-name <type > (expression);  //转换之后赋值, 也可以不赋值.
+     // 将 expression 转换成 type 类型的值.
+     // cast-name 是 static_cast, dynamic_cast, const_cast, reinterpret_case 中一种.
+     // static_cast :只可以将不是const 底层类型的值强制转换成其他类型.
+     // const_cast :只可以(仅)改变元算对象的底层const .可以把const类型强制转换,但是属性还在.
+     //             但是不可以转换常量表达式.
+     // reinterpret_cast :(这个非常危险) 通常为运算对象的位模式提供较低层次上的重新解释.
+     //                   就是抹掉 expression 原先的定义类型,改变成为设定的类型.
+     //                   操作与 (type) expression 强制转换非常类似.
+
+
+
+函数部分:
+* getline(istream, string_s_Name);
+   // 该函数会读取输入流字符串,只可以读取 string 的字符串,而且格式也要正确
+   // 例: string s_word[5]; getline(cin.s_word[1]); 
+   //     读取输入流的一串字符串储存在 s_word 第2个 元素中.
+   // 换行符也会被读取,然后丢掉,不会写入到 stirng 对象中. 
+
+* cin.getline(s_Name, number);
+   // 该函数会读取 (number-1) 个字符存入 s_Name 字符串中.
+   // 可以接受空格
+
+* getline(cin , s_Name);
+   // 该函数会读取字符串存入 s_Name 字符串中.
+   // 可以接受空格,但是需要 <string> 头文件
+
+* cin.get(c_Name);
+   // 该函数会读取输入流字符, 每次只可以读取一个字符.当读入 EOF 时返回假值,而c_Name 不变
+   // 例:  char c_ch;   cin.get(c_ch);
+   //  可以代替 getchar() ,来替换清除错误输入后的循环.  getchar() == cin.get()
+* n_Name = cin.get();
+   // 接受一个整数 int 类型, 每次读取一个字符后,会强制转换成 char 类型, 
+   // 当读入 EOF 时,则把 -1(EOF等与-1) 赋给 n_Name .从而终端判断表达式.
+
+* cin.clear() ;
+   // 重置输入流,可能会清除 EOF .一般用在错误输入清除之前重制输入流.
+
+* cin.fail();
+   // 该函数用于测试输入流是否得到了 EOF ,如果得到 EOF 则返回 true .
+   // 可以不带任何参数,单独出现在 循环测试中 ,但是在前必须出现一次 cin.get(c_char); 
+   // 用作判断条件;
+   // 例: cin.get(c_char); while(cin.fail() == false); 如果读到 EOF 则终止循环.
+
+* std::string str;    int i = atoi(str.c_str());
+   //  atoi() 该函数会将 char * 类型转换成 int 类型的数字.
+   //  str.c_str() 会将 str 字符串将 string 变成 char * 类型.
+
+* std::string str;    int i = stoi(str);
+   //  stoi (str)  该函数会将 string 类型字符串转换成 int 类型的数字.
+   //  这个函数支持 string 可以直接使用, 比 atoi 要好.
+ 
+* cout << fixed;
+   // 表示将浮点数按照一般形式输出,而不是科学计数法,只是一个修改输出形式的指令
+   // 没有什么特殊意义. 可以单独出现在代码块中.
+
+* int ps (int num); 
+  auto q_ao = ps;
+   // auto 自动类型推断 ps 的类型,并且将q_ao 自动初始化为与 ps 相同的类型.
+
+* thread_local n_Name;
+   // 使用关键字声明一个 线程存储持续性的变量.
+
+* register n_Name;
+   // 使用关键字声明一个 CPU寄存器来存储的自动变量. 代表程序员即将使用该变量.
+
+* cerr   // 输出警告信息.用于输出错误信息或其他不属于程序正常逻辑的输出内容.数据不被缓冲.
+  clog   // 输出错误消息.用于报告程序的执行信息,存入一个日志文件中.写到clog的数据是被缓冲的.
+   // 都是ostream 对象,关联到标准错误  .
+
+* $ program_Name< infile >outfile
+   // 程序名 < 向程序内输入的文件名 > 从程序输出的文件名
+   // $ 是系统提示符. 就是终端输入
+
+* nullptr   // 空指针 
+
+* constexpr  type n_Name = 字面值类型_常量表达式; // 常量表达式关键字.
+   // 尤其是在不知道赋值操作是不是常量的情况下进行操作.
+   // 允许将变量声明为该类型, 以便 编译器 来验证变量的值是否是一个常量表达式.
+   // 声明为 constexpr  一定是一个常量.而且必须用常量表达式初始化.
+   // 初始化值必须纯在某个固定地址中的对象.
+   // 会在编译时确定,而不是运行.
+   // 定义于所有函数体之外的对象其地址不变,可以用来初始化该类型常量.
+   // 只允许有一个 return 语句, 不允许出现多重返回判别.
+
+* using  别名 = type_Name ;   // using 别名声明关键字
+   //  using 关键字   别名  =  复合类型名
+   //  用别名代替 复合类型名 .
+   //  相当于 typedef  作用相同.
+
+* decltype  (fun_Name or type()) n_Name = data ;   
+   // decltype 关键字  (有返回值的函数 或者 数据类型(不需要参数)) 变量名 = 初始化变量的数据;
+   // 运行到这里的时候 函数并不会运行,而是等待程序运行函数后才会返回定义类型.
+   // 函数返回的是什么类型那么 变量就会是什么类型.
+
+* difference_type  //类型
+   // 由string 和 vector 定义的一种带符号整数类型,表示两个迭代器间的距离
+
+
+* runtime_error 
+    throw  runtime_error("std");
+   // 是标准库异常类型的一种类型.
+   // 定义在 <stdexcept>  头文件中.
+   // 使用时必须初始化该对象.方式是一个string或者c字符串,这个字符串中有一些关于异常的辅助信息.
+   // 执行时会抛出异常,终止当前函数,并把控制权交给能够处理异常的代码.
+
+* throw 表达式.异常处理:   包含头文件<stdexcept>
+   // 用于引发异常,发现异常.
+
+* try 语句块.异常处理:   包含头文件<>
+   try{
+       program-statements        // 程序的正常语句
+   } catch ( exception-declaration){  // 异常声明(一个对象的声明)
+       handler-statements        // 处理程序语句,属于catch的一个块
+   } catch ( exception-declaration){  // 异常声明(一个对象的声明)
+       handler-statements        // 处理程序语句,属于catch的一个块
+   } // ... 更多的 catch 语句 
+
+   例:  try{   if(1)  throw runtime_error("异常");}
+        catch(runtime_error err) { cout<< err.what();}
+
+    // 意思是 try 中的代码是正确运行代码,如果出现问题则查看 runtime_error 抛出的异常.
+    // 按照异常的反馈 来选择进入哪个 catch 代码块进行异常处理. 相当于switch.
+    // 在try中声明的类型数据,在catch中是无法访问的,也拥有 块作用域.
+    // runtime_error .what() 该函数会返回一个 c风格的 const 字符串.也就是上面定义的;
+
+* decltype 自动类型推断:
+     int odd[] = {1,2,3,4,5};  int even[] = {6,7,8,9,0};   // 两个int数组
+     decltype (odd) * arrPtr (int i)       // 含有5个int 类型的指针 指向(分析 等待返回值)
+     { 
+         return ( i % 2)? &odd : &even;    // 返回 指向 odd 或者 even
+     } 
+     
+     使用 decltype 来进行函数类型的自动推断：
+     string::size_type sum(string , string );
+     decltype (sum) * getFcn( const string& );
+     // 等价于  string::stize_type (*)(string,string) getFcn(const string& );
+     // decltype 作用于某个函数时，返回的是函数类型 而不是指针，因此必须要显示的加上 * 
+     //   以表示这是个指针。
+
+
+* assert 调试预处理宏:
+    assert(expr);   // 该预处理宏回判断 expr表达式 的真假. 假-则终止程序,真-则什么也不做.
+    assert( a < b );  // 真则什么也不做,  假 则终止程序.
+    // 根据表达式返回值执行一定操作.用于代码的调试工作 !!如果程序完成后则需要删除该代码.  
+    // 定义在头文件  <assert> 中. 因为是预处理名字,所以不需要名称空间
+    // assert 的行为依赖于 NDEBUG 的预处理变量的状态. 如果定义了 NDEBUG,则assert 什么都不做.
+    // 默认状态时下是没有定义 NDEBUG .此时assert 将执行运行时检查.
+    // 可以把 #define NDEBUG 看成开关 assert 的选项.
+
+* NDEBUG 预处理器变量:
+    // 如果该变量定义了则会影响 assert这个调试预处理宏.
+    // 也可以自己编写调试代码. #ifnedf NDEBUG cerr<<... #denif.如果定义了NDEBUG则不执行.
+    
+
+* _ _func_ _  局部静态变量,储存了调用函数的名称:
+    // 实际是两个下划线连起来. 这个变量可以直接输出,是 const char 类型的字符串.
+    // __FILE__  存放文件名的字符串字面值.
+    // __LINE__  存放当前行号的整形字面值.
+    // __TIME__  存放文件编译时间的字符串字面值.
+    // __DATE__  存放文件编译日期的字符串字面量.
+
+
+* 标准库 bitset 类型:   二进制工具,需要头文件<bitset>
+    bitset<32> a; // a的大小是32位二进制, 全都是0, 就算cout 输出也是输出32个0
+    bitset<32> c(0xffff);  // c的大小是32位十六进制,会输出16个0和16个1,补全关系
+    bitset<32> e(100);   // e是二进制的,用10进制初始化,然后换算成二进制放到e 里面
+    string str("11101"); bitset<16> g(str); 
+    // 字符串也可以用来初始化,g 会直接输出11个0和11101
+  
+    bitset<16> f(str,2,3);  
+    //用字符串初始化,从第2位开始取3位,(从前向后数,字符串第0位为第0位,输出13个0和101)
+    // ;因为c++ 版本不同,这个顺序可能会有变动,最好测试一下
+
+
+
+* class 类:
+   class CLASS_Name {
+   public:        // 公共行为或属性  一般都是函数.用作外部调用
+        ....  // 声明, 不可以出现定义初始化
+        void bbb(void) const {std::cout<< this->i}; // const把this变成了常量指针
+        CLASS_Name(const int &nm,int s)const: a(nm),i(s){}   // 构造函数
+   private:       // 私有行为或属性
+        void aaa(void);  
+        int i;
+        int a;
+        ...   //声明, 不可以出现定义初始化
+   protected:     // 派生类 和 private 类似
+  };
+   void CLASS_Name::aaa(void){ ... }  // 定义；
+   // private 表示该部分内容是私密的, 不能被外部所访问或调用, 只能被本类内部访问;
+   // 而 public 表示公开的属性和方法, 外界可以直接访问或者调用.
+   // 一般来说类的属性成员都应设置为private, public只留给那些被外界用来调用的函数接口;
+   // 如果不添加关键字，则所有的声明都是私有的，也就是说明所有函数成员都可以访问私有数据和公共数据.
+   // static 内容默认都是 公有的;
+   // 写在 class 内部有定义的函数都是内联函数;
+
+
+* 构造函数:
+   class Person {
+   public:
+       Person(int nm,const int a):num(nm),age(a){}
+   // 构造函数 得到 nm 和 a 的值之后 用初始化列表 赋给了 num, age.
+
+       Person() = default;
+   // 保留默认构造函数. 有的时候确实需要默认行为.
+
+       Person(std::istream &os, string s);
+   // 构造函数声明, 定义在外部,没有初始化列表
+
+       explicit Person( int a ) const :num(a) { }
+   // 当构造函数只有一个参数的时候必须加上 explicit 关键字用来规避错误.(全都加也可以)
+   // 当有const 的时候就表示函数内所有的参数都不能修改.
+
+       Person( int a , std::vector<std::string> & stds ):num(a) 
+       { this->s_std = stds;   }  // 非自带类型应该写在函数体里
+
+   private:
+       const int age;
+       int num;
+       std::vector <std::string>s_std;
+   };
+
+   inlien Person::Person(std::istream &os std::string s) { ... } 
+   // 构造函数定义. 也是不能有返回值.  (是个内联函数)
+
+   int main(void)
+    {  Person ( 12,10 ); }    // num = 12  age = 10
+   // 构造函数永远也不需要 const 函数来限制初始化,
+   // 但是 const类型,引用类型,没有初始化函数的类类型 必须用初始化列表来初始化.
+   // 构造函数会在声明对象的时候自动运行. 而且不能有返回值.
+   // 构造函数必须写在 public (公有) 中.
+   // 当构造函数只有一个参数的时候必须加上 explicit 关键字用来规避错误.
+   // 为了便于管理内存空间,尽量使用 string 或者 vector 来申请字符串.否则将会非常复杂.
+   // 一旦我们写了构造函数,那么c++就不会帮我们写一个默认构造函数了.
+
+* 友元 friend :
+    class Pon {
+       public:
+         friend class cat;   //友元函数/友元类  把一个完整的类,变成友元类
+         friend Pon add( int a);  // 友元函数  可以访问类内的所有私有数据
+         friend Dog::name( string& );  //友元函数  链接了Dog类中的函数
+       private:
+         frien   int sad( int b ) ; //友元函数  可以访问类内的所有私有数据
+         double  dd;
+     };
+      Pon add( int a);         int sad( int b ) ; // 友元需要在类外二次声明,也就是正常声明.
+      Pon add( int a) {...}    int sad( int b ) {...}   // 友元函数定义,
+    // 友元可以使其他类 或 函数 访问它的私有成员数据.
+    // 为了整洁和规律 , 应该把友元 都集中放在类定义 开始 或者 结束.
+    // 友元需要在类外二次声明, 声明的时候接不需要友元关键字了.
+    // 如果是重载函数,那么需要把每个重载函数都要进行友元函数声明.
+
+* class 中的 static 静态成员:
+    class i {
+       public:   //略
+         explicit static void newNum(int Nnum) { this->num = Nnum;}  //静态成员函数操作静态变量成员
+         static int& num_pil(int Nnum) { return this->num;}  // 返回引用就可以当做左值来修改静态成员
+       private:
+          static int num;    // 每个对象都有,但是这个值是相通的,是共用的,可以通过静态成员函数操作
+          double  ber;
+          static cosnt int per = 30 ;  // 只有静态整形常量才可以在类内初始化
+       };
+     int i::num = 123;    //通过这种方法可以初始化.但是要在块作用域外,main之外.
+     i::newNum( 123 );   //这种也是可以来进行初始化的
+     int main(void){  i a,b;  a::num = 20;  // b的num也会等于 20 }
+    // 类内的 static 的值, 独立于任何对象，属于类，每个对象都可以用，但不是某个成员的。
+    // 要是用静态成员函数操作静态变量成员 ,这是最好的,可以让我们在声明对象之前去定义静态成员的值.
+    // 如果静态函数返回的是一个引用,则可以当做左值直接修改
+    // static 成员类外存储,求类大小,并不包含在内.成员是命名空间属于类的全局变量,存储在 data 区.
+    // 拥有类作用域,开辟的空间在静态区(全局区).
+
+* class 中 委托构造函数：
+     class wt{
+         public: 
+           explicit wt(int a, int b,double c):num(a),ber(b),cint(c) {}  //正常构造函数
+           explicit wt(int a):wt(a,0,4.7){cout << "print"}    // 委托构造函数,调用第一个构造
+           explicit wt(string str):wt(0,0,2.3){}  //委托构造函数,调用第一个构造函数
+         private:
+            int num,ber;  double cint;  }
+
+      // 委托构造函数时，优先执行委托构造函数，然后执行函数体，最后控制权才会交给正常构造函数.
+      // 委托构造函数就是调用其他的构造函数来构建一个新的构造函数
+
+*class 中 析构函数,深复制和浅复制,复制操作符,赋值操作符:
+      class wt{
+        public:
+            wt(int a):num(a),ps(new string){}
+            wt(const wt& oth);  // 复制操作符 声明, 如果出现析构函数,那么这是必须要写的.
+            wt& operator=(const wt& rhs);  // 赋值操作符 声明,就是一个操作符
+            ~wt();      //析构函数 声明 只是添加一个波浪线,可以定义在类内也可以定义在外面.
+        private:
+            string * ps;  int num; }
+        wt::(const wt& oth){ ps = new string; *ps = *(oth.ps); oth = wt.num;}
+             //这是复制操作符的定义,需要把引用型参的成员,一一复制到类里面.没有返回值
+        wt& wt::operator =(const wt& rhs)  //赋值操作符定义,有返回值,与复制操作符内容相同
+        {ps = new string; *ps = *(rhs.ps); rhs = wt.num;
+           return *this;        // 返回this指针,因为有个引用返回
+        }
+        wt::~wt() { delete ps }     // 析构函数不能有传入参数,而且只能定义一次
+     // 在构造函数内可以 打开文件,连接数据库,动态分配内存.....
+     // 但是在 析构函数中 必须进行 关闭文件,关闭数据库连接,回收动态分配的内存....
+     // 如果写了析构函数,那么一定要写 构造函数 和 复制操作符 和 赋值操作符.
+     // 如果类非常简单,没有指针数据库之类,那么就不需要析构函数.(毕竟过于麻烦)
+     // 析构函数只能写一个,不能重载.
+     // 但是我们写了一个析构函数之后,c++还是会帮我们自动生成一个析构函数,
+     //     当执行时,首先执行自己写的析构函数,然后在执行c++自动生成的析构函数.
+     // 写复制函数的时候注意 深复制和浅复制, 浅复制不可信任.(尤其是指针) 
+     // 赋值操作符必须要关键字 operator (后面跟符号) 来声明和定义
+
+
+
+*STL 容器使用和基本语法:
+  *vector 容器的一些操作:    vector<int>v(10,8);  // 10个8 , 尽量不要用下标进行操作
+   vector<int>::size_type ix = 0;   //用在vector对象的容器[下标] 中的类型,很多容器不支持下标,但是都有迭代器
+   vector<int>::iterator pe = v.end();  // pe获得了指针(iterator),指向尾迭代器,可以看成是指针.
+   vector<int>::size_type pz = v.size();  //v.size  返回的是size_type 类型,pz得到总的元素个数.可以参与运算. 
+   
+  for(vector<int>::iterator iter = v.begin(); iter != v.end(); iter++);  
+        cout<< *iter << endl; 
+   // iter 是个迭代器类型 指向v迭代器的第一个元素,一般用在循环和 v.end() 用来做不等式比较,替代下标
+   // 通过++iter(或者iter + 数字也行) 和解引用*iter 可以访问v 中所有的元素并打印输出,
+    
+   vector<int>::const_iterator pv = v.begin();   //长迭代器, 只能读数据不能写数据,或者用在const的容器.
+    
+  * 迭代器, 实际上就是一个指针:
+  auto a = string.begin(); // string 成员函数,返回只想该数组首元素指针.类型为 iterator
+                  // 如果是常量则返回 const_iterator 类型
+  vector<int>::iterator pv = v.begin();  // p是vector<int> 类型,pv 是vector<int>类型的迭代器指针
+  * pv = 10;   //修改了p中第一个元素的数值.
+  pv++;   // 迭代器递增,指向下一个元素, 反之亦然
+  
+  pointer_type = begin( 数组 ); // begin 函数接收数组,返回该数组的首元素指针
+  pointer_type = end( 数组 );  // end 函数接收数组,返回该数组的尾元素的下一个位置的指针,指向一个不存在的位置.
+  auto a = end(arr) - begin(arr); // 两个指针相减会返回 ptrdiff_t类型带符号的值.
+                    // 里面有两指针之间的距离.可能会有负数.存在头文件< cstddef >
+   // 来自头文件 < iterator >   可以实现和迭代器相同的作用.
+   // cbegin 和 cend 更加适用于c 的版本内容.尤其是接口
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
