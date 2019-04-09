@@ -19,11 +19,19 @@ git 常用命令
     获得版本库
 *       git init    初始化一个新的仓库
 *       git clone   将远程版本库复制一份到本地
+            $git clone git://github.com/schacon/grit.git 
+                    # 将 github上 schacon 用户的 grit 项目复制到本地的当前所在文件夹.
+            $git clone git://github.com/schacon/grit.git   ~/new_mkdir
+                    # 将 github上 schacon 用户的 grit 项目复制到本地的指定用户目录下的new_mkdir目录中
 ----
     版本管理
 *       git add     将当前已修改的文件纳入到暂存区当中
                 $git add text.txt   将text.txt 这个文件纳入到暂存区中.
                 $git add .          将工作目录下所有的文件全部纳入到暂存区, 非常常用
+               
+*               $git remote add origin https://github.com/solo1d/gitlecture.git
+                      #使用git远程命令, 添加一个远程地址, origin 代表后面的一串地址(远程仓库).后面命令用origin代替网址
+                      # 就是创建一个远程仓库, 并且和本地做关联, 从本地->远程, 仅仅是绑定.
 
 *       git commit  将暂存区当中的文件纳入到版本库中
                 $git commit -m '提交注释和说明'       提交和注释说明
@@ -65,10 +73,11 @@ git 常用命令
     查看信息
         git help     获取帮助
         git log      查看提交日志
-                 $gie log -4      查看最近4条提交的日志消息.
+                 $git log -4      查看最近4条提交的日志消息.
                  $git log --pretty=oneline    查看简短的日志, 只显示ID 和提交说明.
                  $git log --pretty=format:"%h - %an,%ar : %s"    定制格式显示日志.
                  $git log --graph       图形化显示日志.
+                 $git log  refs/remotes/origin/master   查看远程分支master的一个历史记录
         
         git reflog      操作日志和曾经版本的 commit ID, 回退版本和提交信息都可以去这里找.
 
@@ -79,6 +88,12 @@ git 常用命令
 
 
         git blame +文件名    显示修订版和作者上次修改文件的每一行
+
+
+*       $git remote show origin  与本地相关联的 origin 的详细信息. 和对应关系,全部详细的罗列出来.
+            # 列表中的Fetch URL 是拉取地址(远->本).   Push 是推送地址.(本->远)
+
+*       $git remote show         显示与我这个本地仓库有关联的远程名称.
 
 ----
     远程协作
@@ -117,7 +132,7 @@ git 常用命令
     
          $git push origin v1.0 v2.0 
                 # 将本地标签 v1.0 和 v2.0 推送到远程
-        $git push origin --tags
+         $git push origin --tags
                 # 将本地所有未推送到远程的分支,全部推送过去.
 
 
@@ -139,7 +154,7 @@ git 常用命令
 *       git branch +名字  创建新的分支
 *               $git branch new_branch     创建一个新分支, 名字是 new_branch
 *
-*       git branch -d +名字    删除某个分支
+*       git branch -d +名字       删除分支
 *               $git branch -d  new_branch   删除这个分支
 *               $git branch -D  new_branch   强制删除这个分支,忽略未合并错误.
         
@@ -198,23 +213,32 @@ git 常用命令
             $git tag           
                 #会弹出标签列表
             $git tag -l '内容'  
-               #查找标签,内容可以使用通配符,  一般是 v*.* 什么的
+               #查找本地标签,内容可以使用通配符,  一般是 v*.* 什么的
             
             $git tag v1.0                   
-                #创建一个轻量级标签
+                #创建一个本地轻量级标签
             $git tag -a v2.0 -m '标签说明'    
-                #创建一个标签 并且添加说明
+                #创建一个本地标签 并且添加说明
 
-            $git tag -d +标签名     
-                #删除v1.0 这个标签
+            $git tag -d v1.0     
+                #删除本地 v1.0 这个标签
             $git show v1.0        
-                # 显示标签 1.0的改动和内容
+                # 显示本地标签 1.0的改动和内容
 
             $git push origin v1.0 v2.0 
                 # 将本地标签 v1.0 和 v2.0 推送到远程
             $git push origin --tags
                 # 将本地所有未推送到远程的分支,全部推送过去.
+            $git push origin refs/tags/v7.0:refs/tags/v7.0
+                # 将本地的 v7.0标签推送到远程的7.0标签(远程在推送前可以没有7.0这个标签), 这个是完整写法
 
+            $git push origin :refs/tags/v6.0
+                #删除远程标签 v6.0
+            $git push origin --delete tag v5.0
+                # 将在远程的标签 v5.0 删除掉   新版本的写法, 1.7
+           
+            $git fetch origin tag v7.0
+                #将在远程的 v7.0 这个标签从远程拉取到本地.
 
 
 
@@ -233,6 +257,7 @@ git 常用命令
                 网页创建完成之后的操作:
 *                   $git remote add origin https://github.com/solo1d/gitlecture.git
                       #使用git远程命令, 添加一个远程地址, origin 代表后面的一串地址(远程仓库).后面命令用origin代替网址
+                      # 就是创建一个远程仓库, 并且和本地做关联, 从本地->远程, 仅仅是绑定.
 *                   $git push -u origin master
                       #将本地的master 这个分支上推送到远程, 并且将远程的master与本地的master做一次关联.
                   然后会弹出验证界面
@@ -267,12 +292,17 @@ git 常用命令
 
 *               $git remote show         显示与我这个本地仓库有关联的远程名称.
 *               $git remote show origin  与本地相关联的 origin 的详细信息. 和对应关系,全部详细的罗列出来.
-                        # Fetch URL 是拉取地址(远->本).   Push 是推送地址.(本->远)
+                        # 列表中的Fetch URL 是拉取地址(远->本).   Push 是推送地址.(本->远)
 
 *           $git clone +网址(ssh的)     将远程仓库的所有内容克隆到本地.需要在一个新文件夹内使用.
 *               $git clone +网址 +字符串     将远程仓库克隆到后面字符串的文件夹内,就是改名字.
 
 *           $git fetch     将远程的修改拉取到本地 并更新本地的远程分支. 但是他不会执行合并操作.(git merge)
+            $git fetch origin tag v7.0
+                #将在远程的 v7.0 这个标签从远程拉取到本地.
+            $git fetch  origin master:refs/remote/origin/mymaster
+                #将远程的 masert 拉取到本地的 mymaster  
+
 
 
 
@@ -298,7 +328,7 @@ git 常用命令
 
 
 ------
-    远程操作: 删除远程版本库
+    远程操作: 删除远程版本库中的分支
         $git push origin  :develop
             # 推送一个空的分支给远程版本库中的 develop分支, 这就相当于删除分支.
             # 他会提示 [delete]  分支名字.  
@@ -306,6 +336,10 @@ git 常用命令
 
         $git push origin --delete develop
             # 这个是新版的远程分支删除写法. 等价于上面的写法, 提示也一样 ,但是更直观.
+
+    删除掉远程分支之后同步的将本地分支也裁剪掉
+        $git remote prune origin
+            # 需要使用 git remote show origin 来查看远程分支状态,然后在执行, 这个命令会删除远程没有的本地分支.小心使用.
     
 ------
     远程操作: 重命名远程版本库的分支
@@ -315,7 +349,12 @@ git 常用命令
               $git push origin --delete  +重命名的分支名字
               $git push --set-upstream origin +重命名完成的分支名字     这样就完成推送并且重命名了.
  
-
+-------
+    远程操作: 删除远程标签
+        $git push origin :refs/tags/v6.0
+            # 将在远程的标签 v6.0删除掉
+        $git push origin --delete tag v5.0
+            # 将在远程的标签 v5.0 删除掉   新版本的写法, 1.7
 
 
 
@@ -390,36 +429,6 @@ git 分支的命名规范 建议
         1.4 hotfix 分支
 
 Git合并原则:
-    Git遵循一个三方合并原则
+    Git遵循一个三方合并原则: 两个不同的人提交的两个分支, 和这两个分支指向的相同的上一个版本
         
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
