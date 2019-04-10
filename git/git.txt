@@ -18,6 +18,10 @@ git 常用命令
 ----
     获得版本库
 *       git init    初始化一个新的仓库
+                # 一般情况下使用 git init 直接来创建一个库
+                    $git init --bare
+                        # 这个命令是来创建一个裸库的, 一般不是开发者使用
+
 *       git clone   将远程版本库复制一份到本地
             $git clone git://github.com/schacon/grit.git 
                     # 将 github上 schacon 用户的 grit 项目复制到本地的当前所在文件夹.
@@ -348,7 +352,26 @@ git 常用命令
               $git branch -m +旧分支名字  +新分支名字
               $git push origin --delete  +重命名的分支名字
               $git push --set-upstream origin +重命名完成的分支名字     这样就完成推送并且重命名了.
- 
+----
+    远程操作: 重命名远程仓库
+         首先重命名本地下的对应远程仓库的名字
+            $git remote rename origin origin2
+                #重命名本地的远程仓库名字, 但是远程仓库还是没有变的
+
+
+
+----
+    远程操作: 删除和添加远程仓库
+         首先删除存留在本地的远程仓库的绑定信息
+              $git remote rm origin
+                #将本地的远程仓库信息删除了, git remote show 也不会显示远程信息 ,但是远程仓库和本地还是存在的.
+        
+
+         添加远程仓库
+              $git remote add origin git@github.com:solo1d/gitlecture.git
+                # 如果本地残留这个库的话,会直接复原. 如果没有会去远程拉取.
+
+
 -------
     远程操作: 删除远程标签
         $git push origin :refs/tags/v6.0
@@ -379,6 +402,22 @@ git 常用命令
 ------
 
 $git pull 和 $git push 原理: 它连续执行两个命令. git fetch 和 git merge origin/master 两个操作.
+
+
+
+
+
+
+-----------------
+    git 裸库
+        作用:是一个没有工作区的仓库(该目录直接就是 .git 目录中的内容),仅仅是用来存放和中转和提交开发者代码的区域.
+            一般来说, 都是服务器端会存在裸库
+            $git init --bare
+                # 这个命令会在当前目录下创建一个裸库.
+
+
+---------------
+    submodule
 
 
 
@@ -431,4 +470,14 @@ git 分支的命名规范 建议
 Git合并原则:
     Git遵循一个三方合并原则: 两个不同的人提交的两个分支, 和这两个分支指向的相同的上一个版本
         
+
+去 github中的个人主页. 'SSH and GPG keys' 去添加自己的公匙,这样就可以在自己所有的项目中都可以使用了.不需要双密匙了.
+
+ 
+
+
+
+
+
+
 
