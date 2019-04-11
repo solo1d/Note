@@ -25,8 +25,39 @@ git 常用命令
 *       git clone   将远程版本库复制一份到本地
             $git clone git://github.com/schacon/grit.git 
                     # 将 github上 schacon 用户的 grit 项目复制到本地的当前所在文件夹.
-            $git clone git://github.com/schacon/grit.git   ~/new_mkdir
+            $git clone git@github.com:solo1d/grit.git 
+                    # 将 github上 schacon 用户的 grit 项目复制到本地的当前所在文件夹.
+            $git clone git@github.com:solo1d/grit.git  ~/new_mkdir
                     # 将 github上 schacon 用户的 grit 项目复制到本地的指定用户目录下的new_mkdir目录中
+
+
+    如果远程库中包含了 submodules 的话就需要在复制后重新初始化 submodules 和更新.
+           
+    注意当使用了 submodule 之后, 新来的成员的新git仓库的初始化方式会有变化:
+
+第一种初始化方法
+    $git clone git@github.com:solo1d/git_parent.git  git_parent2
+        # 复制远程版本库 solo1d用户的 git_parent项目,到 git_parent2这个新目录(执行前不能存在).但没有依赖项目. .但没有依赖项目.
+    $cd  git_parent2     #来到这个新目录
+    $git submodule init
+        #初始化 submodule
+    $git submodule update --recursive
+        #执行submodule 递归更新.  这个时候就可以了.已经把所有内容都拉取回来了.
+    $cd mymodule && git checkout master
+        #进入依赖项目文件夹, 并且进入 master这个分支. 如果不进入那么会在一个 sha1 值的分支上.
+
+第二种初始化方法
+    $git clone git@github.com:solo1d/git_parent.git git_parent3 --recursive 
+        #复制远程版本库, 并且将依赖的项目也一并复制过来.
+        $cd mymodule && git checkout master
+            # 顺便切换一下依赖项目所在分支.
+
+
+
+
+
+
+
 ----
     版本管理
 *       git add     将当前已修改的文件纳入到暂存区当中
@@ -46,11 +77,13 @@ git 常用命令
 
 *       git rm      删除工作目录当中一个特定的文件, 将被删除的文件纳入到暂存区.
                 $git rm text.txt       删除工作区的text.txt文件, 删除后可以直接提交.
+                $git rm --cached file  将文件或者目录从暂存区中移除.(但是工作内的实体还在)
                         若想恢复被删除文件,需要执行下面两个动作.
                              $git reset HEAD text.txt          将待删除的文件从暂存区恢复到工作区.
                              $git checkout -- text.txt         将工作区删除的这个修改丢弃. 文件恢复结束.
                         如果是使用系统的 rm 来删除的话 需要多进行一步, 将修改纳入到暂存区.在执行上面两步.
                              $git add text.txt
+
 
 *       git mv      和系统mv相同,然后将操作纳入暂存区. 这个动作对于git来说就是删除一个文件,然后复制一份新名字文件.
                 $git mv old.txt new.txt     将old.txt 重命名为 new.txt
@@ -99,6 +132,9 @@ git 常用命令
 
 *       $git remote show         显示与我这个本地仓库有关联的远程名称.
 
+
+
+
 ----
     远程协作
         git pull    将远程版本库的文件拉取到本地
@@ -141,6 +177,9 @@ git 常用命令
 
 
 
+
+
+$git pull 和 $git push 原理: 它连续执行两个命令. git fetch 和 git merge origin/master 两个操作.
 
 
 
@@ -401,14 +440,9 @@ git 常用命令
 
 ------
 
-$git pull 和 $git push 原理: 它连续执行两个命令. git fetch 和 git merge origin/master 两个操作.
+-------------------------------------------------------------------------------------------------
 
 
-
-
-
-
------------------
     git 裸库
         作用:是一个没有工作区的仓库(该目录直接就是 .git 目录中的内容),仅仅是用来存放和中转和提交开发者代码的区域.
             一般来说, 都是服务器端会存在裸库
@@ -416,17 +450,74 @@ $git pull 和 $git push 原理: 它连续执行两个命令. git fetch 和 git m
                 # 这个命令会在当前目录下创建一个裸库.
 
 
----------------
-    submodule
+
+-------------------------------------------------------------------------------------------------    submodule: 一个项目中包含和引用多个项目, 同时包含进来的项目配置文件会在 .git/modified 目录下(每个依赖就有一个文件夹)
+
+*增加引用依赖项目
+
+    # git_parent是引用项目, git_child是被引用的项目.
+     $git submodule add git@github.com:solo1d/git_child.git mymodule
+        # 在 parent 中执行, 将远程的 solo1d用户的 git_child 项目克隆过来, 并且需要一个新的文件夹来存放.
+            # 执行完成后会多出 git_child项目的文件夹,还有一个git生成的  .gitmodules 文件.
+
+       $git add .    
+            # 将新引入的项目 添加到 git_parent 这个项目中.
+        $git commit -m 'add submodule'
+            # 在本地提交一次
+        $git push 
+            # 将引用这个操作推送到远程
+    #推送完成后, 远程会多出一个文件夹 mymodule @ 146cfd(上面自定义的,后面是git_child项目的sha1值),点击后会进入
+        # git_child  这个项目的页面中.
+
+    更新引用过来的项目
+        $cd mymodule     
+            # 进入git_child 本地的这个项目目录中
+第一种方法   $git pull
+            # 这是一种方法,  可以拉取到 git_child 项目的最新修改.
+第二种方法   $git submodule foreach git pull
+            # 需要在git_parent 目录下执行, 作用是 遍历依赖的所有项目,然后对每个submodule执行 git pull操作拉取最新代码.
+
+    当完成更新后,需要 $git add. 一次,和提交一次  $git commit -m 'update submodule' , 最好还需要$git push 到远程. 
+
+
+ 注意当使用了 submodule 之后, 新来的成员的新git仓库的初始化方式会有变化:
+
+第一种初始化方法
+    $git clone git@github.com:solo1d/git_parent.git  git_parent2
+        # 复制远程版本库 solo1d用户的 git_parent项目,到 git_parent2这个新目录下(执行前不能存在).但没有依赖项目. 
+    $cd  git_parent2     #来到这个新目录
+    $git submodule init
+        #初始化 submodule
+    $git submodule update --recursive
+        #执行submodule 递归更新.  这个时候就可以了.已经把所有内容都拉取回来了.
+    $cd mymodule && git checkout master
+        #进入依赖项目文件夹, 并且进入 master这个分支. 如果不进入那么会在一个 sha1 值的分支上.
+
+第二种初始化方法
+    $git clone git@github.com:solo1d/git_parent.git git_parent3 --recursive 
+        #复制远程版本库, 并且将依赖的项目也一并复制过来.
+        $cd mymodule && git checkout master
+            # 顺便切换一下依赖项目所在分支.
+
+
+*删除引用依赖项目
+    首先将不需要的submodule从暂存区删除. 然后将实体文件从工作区删除, 然后将.git/submodule 目录删除.
+        如果只是删除某一个依赖,那么会有一点点的区别, 就是挑选删除,不能全部删除.
+            $git rm --cached mymodule    
+                #将 mymodule 从暂存区中删除, 就变成了未跟踪状态.
+            $rm -rf mymodule .gitmodules 
+                # 使用系统命令 将mymodule从工作区删除. 以及.gitmodules配置文件. (.git/modules 删不删无所谓)
+            $git commit -m 'remove submodule'
+                #提交一次, 更新删除状态. 本地删除完成,  
+            $git push 
+                #更新删除状态到远程.  这样远程也删除完成了.
 
 
 
 
 
 
-
-
-
+-------------------------------------------------------------------------------------------------
 
 master 是主分支.常用与发布系统和生产版本的分支
 
