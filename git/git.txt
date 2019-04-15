@@ -12,6 +12,46 @@ man git-config   查看配置文件帮助
                    /**/*.txt       忽略所有目录中的所有.txt文件. 包括所有的多级目录.
 
 
+
+
+-------------
+一般新项目的本地和远程 初始化的流程:
+    新建一个工作目录, 进入到里面
+        $git init
+        $git config --local user.name '名字'
+        $git config --local user.email '邮箱'
+        $git remote add origin  git@192.168.2.3:solo1d/mytest.github    
+        $然后将本地的公匙添加到远程库. 
+            生成本地公匙和私匙命令: $ssh-keygen -t rsa -C "你的邮箱" -f ~/.ssh/想要生成公匙和私匙的文件名名字 
+             将私匙添加到本地的私匙列表中. $ssh-add -K ~/.ssh/私匙的文件名名字  
+                 , 可以用 ssh-add -l  查看私匙列表, ssh-add -D 清空私匙列表 , 还可以定义 config 文件
+
+        $echo '##new' > README.md && git add .  && git commit -am 'add README'
+        $git push --set-upstream origin master  
+            #或者 $git -u origin master
+            # 新建一个分支的时候,也需要这条命令来提交和新建远程分支.
+
+
+远程有项目,有新成员拉取和初始化流程:
+    首先让新成员在本地生成公匙和私匙. $ssh-keygen -t rsa -C "你的邮箱" -f ~/.ssh/想要生成公匙和私匙的文件名名字 
+        将私匙添加到本地的私匙列表中. $ssh-add -K ~/.ssh/私匙的文件名名字  
+        然后再将这个新成员的公匙 添加到项目中(网页操作).
+    接着是新成员本地仓库初始化操作:
+            $git clone git@git@192.168.2.3:solo1d/mytest.github  mygit_work
+            $git config --local user.name  '新成员名字'
+            $git config --local user.email '新成员邮箱'
+            #初始化完成了. 可以操作了.
+
+        $git checkout -b develop origin/develop 
+        如果远程分支多, 可以使用上面这个命令 创建本地的分支 来对应远程分支.这样就可以和远程分支以及内容保持一致.
+
+
+-------------
+
+
+
+
+
 git 常用命令
     获取状态
 *       git status  获取当前工作的处于一个什么样的状态.
@@ -51,9 +91,6 @@ git 常用命令
         #复制远程版本库, 并且将依赖的项目也一并复制过来.
         $cd mymodule && git checkout master
             # 顺便切换一下依赖项目所在分支.
-
-
-
 
 
 
@@ -230,6 +267,8 @@ $git pull 和 $git push 原理: 它连续执行两个命令. git fetch 和 git m
 
 
 
+-------
+    将当前工作内容暂存,并不提交和添加到暂存区.
 
         git stash save '说明'    将当前工作区的内容保存起来,但是和提交有区别
             $git stash save '临时存储'    保存了一个工作区现场, 备注是 临时存储
@@ -320,9 +359,9 @@ $git pull 和 $git push 原理: 它连续执行两个命令. git fetch 和 git m
 *                      $git remote add origin git@github.com:solo1d/gitlecture.git
                         #使用git远程命令, 添加一个远程地址, origin 代表后面的一串地址(远程仓库).后面命令用origin代替网址
                     * 然后生成自己的公匙和私匙
-*                      $cd ~/.ssh  && ssh-keygen
+*                      $$ssh-keygen -t rsa -C "你的邮箱" -f ~/.ssh/想要生成公匙和私匙的文件名名字
                          #然后两下回车就可以生成, 掠过的内容主要是需要密码. 可以回车跳过的,然后就生成了两个文件.
-                        接着打开生成的公匙文件(id_rsa.pub), 复制其中的内容, (私匙绝对不能拿出来. 文件内容短的是公匙)
+                        接着打开生成的公匙文件(你自己定义的.pub), 复制其中的内容, (私匙绝对不能拿出来. 文件内容短的是公匙)
                     随后打开网页来到项目页面, 进入Settings 中的 Deploy keys 的页面, 来设置公匙
                         点击 Add deploy key 来添加. *而且一定要把下面的 'Allow write access' 选上, 这是写入权限.
                            # key 填写 公匙的内容, (公匙内容比私匙短)
@@ -461,7 +500,8 @@ $git pull 和 $git push 原理: 它连续执行两个命令. git fetch 和 git m
 
 
 
--------------------------------------------------------------------------------------------------    submodule: 一个项目中包含和引用多个项目, 同时包含进来的项目配置文件会在 .git/modified 目录下(每个依赖就有一个文件夹)
+-------------------------------------------------------------------------------------------------    
+submodule: 一个项目中包含和引用多个项目, 同时包含进来的项目配置文件会在 .git/modified 目录下(每个依赖就有一个文件夹)
 
 *增加引用依赖项目
 
@@ -535,7 +575,7 @@ subtree 也是一种多重项目包含的命令(不是引用或者指针, 而是
 
     首先在一个本地库下使用该命令添加一个远程库(本地库需要初始化完成,并且会关联一个远程库)
         $git remote add subtree-origin git@github.com:solo1d/git_subtree_child.git
-            # 新添加一个远程库别名是 subtree-origin,    可以使用$git remote show 来查看是否关联了.
+            # 新添加一个远程库别名是 subtree-origin,关联到远程库, 可以使用$git remote show 来查看是否关联了.
   
         $git subtree add --prefix=subtree2  subtree-origin master   后面还有个可选参数(--squash)
             # 调用 subutree add --prefix 来将远程的被依赖的那个库的代码克隆到本地的 subtree2 这个自定义目录下
@@ -600,6 +640,76 @@ subtree 也是一种多重项目包含的命令(不是引用或者指针, 而是
 
 -------------------------------------------------------------------------------------------------
 
+
+
+
+
+将一个分支的提交内容, 复制到另一个分支上  git cherry-pick
+    $git cherry-pick  +commitID
+        # 后面是commitID 通过git log 查看, 需要在复制的分支上进行该命令. 一次复制一个提交,绝对不能跨越提交. 
+        # 比如是把 dev分支的提交复制到 master上, 那么这个操作是在 master上,  后面的commitID 是dev的.就是被复制的
+        # 而且这个复制并不是完全的拷贝, 而是另一种提交(前后的commitID 都不相同.)
+
+
+    复制完成之后, 可能有恢复被复制分支到改动前的要求,那么操作如下.
+        来到被赋值分支(比如是dev) , 并且确定需要还原的点(commitID, 比如是 a12bc ).
+            $git checkout a12bc     
+                #先来到这个commitID 的提交点上, 这个时候是游离状态.
+            $git branch -D dev 
+                # 删除dev 这个分支, (但是我们现在是被删除的游离状态的提交点,所以绝对不能切换到其他分支)
+            $git branch -b new_dev
+                # 通过这个游离状态的提交点创建了一个新分支. 然后这个游离状态就会变成这个分支.
+         #恢复到未改动之前的操作结束
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+rebase , 将当前所在的分支变基到指定的分支上去.(tes->dev), 两个分支合并成一个支线.
+    不要对master分支执行 rebase, 否则会引起很多问题. 而且它会修改曾经的分支的提交记录.
+    一般来说,执行rebase的分支都是自己的本地分支,没有推送到远程版本库, 而且也绝对不能将这个分支推送到与他人共享的远程版本库分支.
+        $git rebase dev
+            # 直接在 需要被变基的分支上执行, tes->dev, 就是从tes和dev的共同指向的提交(可能需要回溯很多步) 开始,
+            #  将当前所在的分支以补丁的形式一个一个的添加到dev目前最后一次提交的后面形成新分支(跟 merge dev 有很大区别). 
+            # 执行完成后,原tes分支会被抛弃.tes会指向新的提交点.
+
+        $git rebase --contiune
+            #rebase 的执行过程也会出现冲突,需要手动解决冲突后,使用$git add 添加,然后执行g$git rebase --continue
+            # 接下来 git 会继续引用于余下的补丁. 这是个循环过程.
+        
+        $git rebase --abort
+            # 任何时候都可以通过这个命令来重置rebase, 分支会恢复到rebase开始之前的状态.
+
+        $git rebase --skip
+            # 放弃补丁分支的冲突修改(默认以dev为基础), 抛弃掉与tes的分支冲突部分.
+    
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------
+
+
+
+
 master 是主分支.常用与发布系统和生产版本的分支
 
 git有三个区域  工作区(work), 暂存区(stage), 版本库(master).
@@ -645,7 +755,59 @@ Git合并原则:
 
 去 github中的个人主页. 'SSH and GPG keys' 去添加自己的公匙,这样就可以在自己所有的项目中都可以使用了.不需要双密匙了.
 
- 
 
+
+
+
+
+
+
+
+---------------------------------------------------------------------
+
+gitlab  安装
+    官网: https://about.gitlab.com/install
+
+  !! 这个网页有详细的介绍和安装步骤. 每个版本可能不同, 需要按照官网的去做(也可以按清华大学的). 绝对不能按下面的走.!!!
+
+全部root执行:
+    #curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh | sudo bash
+     因为国内根本无法下载 github 上的 gitlab安装包 , 所以上面那条命令根本无法执行成功.需要离线包去下面这个网址下载离线安装包:
+            https://packages.gitlab.com/gitlab/gitlab-ce
+        # 里面的内容是安装包,需要注意系统, el/7 是centos7, 
+        
+        # 有个防火墙的命令需要注意, 如果出错,可能是你没有启动防火墙. 去搜索一下对应的怎么开防火墙.
+        # 下面全都是依赖 还有个防火墙, 如果防火墙失败,那么就是没有启动防火墙,需要启动.
+        $sudo yum install -y curl policycoreutils-python openssh-server
+        $sudo systemctl enable sshd
+        $sudo systemctl start sshd
+
+        $sudo firewall-cmd --permanent --add-service=http
+        $sudo systemctl reload firewalld
+
+        $sudo yum install postfix
+        $sudo systemctl enable postfix
+        $sudo systemctl start postfix
+
+    在没有出错的情况下使用接下来的命令:  <gitlab.rpm>
+
+        $sudo rpm -i gitlab.rpm     // 默认我下载了离线安装包了.
+        $sudo vim /etc/gitlab/gitlab.rb    // 修改这个文件中的设置    
+                # 主要是修改这一行 ( external_url 'http://gitlab.com' )
+                # 修改后面的ip地址域   ( external_url 'http://192.168.2.3' )
+                # 配置为这台服务器的ip地址, 这个是对外提供网页访问的.
+        #修改完成后执行下面的重读配置文件的命令
+        $sudo gitlab-ctl reconfigure
+                # 这个时候会刷屏和配置服务器, 出现Chef Client finished, 和 gitlab Reconfigured! 就算是成功了. 
+        
+        上面全都完成后,进入这个网页来进行配置和root密码设置,添加用户和权限之类的.
+            http://服务器的ip
+                #  第一次进入会直接提示让你输入两次密码.  这个是root密码.
+
+
+
+------------
+    gitlab 使用:
+        一定要把项目放入组中, 这样方便管理. 组设置为  Internal 属性(只有组成员才能访问).
 
 

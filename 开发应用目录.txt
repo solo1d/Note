@@ -1,4 +1,4 @@
-﻿IDE:
+IDE:
     for MAC: Xcode . CLion . GCC
     for WIN: vs2017 . block . GCC
 编辑器: 
@@ -20,3 +20,4 @@
 平面设计工具:
     for MAC: Ai . PS . AP . Final Cut Pro . Principle . Sketch . iThoughtsX 
     for WIN: 
+
