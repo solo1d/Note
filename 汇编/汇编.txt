@@ -1,0 +1,81 @@
+指令寄存器  (PC  Program Counter)
+    指向下一条指令的地址
+    EIP(x86-32)  或  RIP(x86-64)
+
+寄存器与寄存器堆
+    在处理器内部的以名字来访问的快速存储单元.
+
+条件码
+    用于存储最近pc执行指令的结果状态信息, 通常用于条件指令的判断执行. 1个bit
+
+存储器(Memory)
+    以字节编码的连续存储空间
+        存放程序代码,数据,运行栈以及操作系统数据, (就是内存).
+
+数据格式: c声明 , intel数据类型, 汇编代码后缀, 字节大小
+    char      字节      b       1字节
+    short     字        w       2
+    int       双字      l       4
+    long int  双字      l       4
+  long long int -       -      4
+    char*     双字      l       4
+    float     单精度     s       4
+    double    双精度     l       8
+  long double 扩展精度   t       10/12
+
+ 
+
+
+减法指令
+    subl  %esi, %eax    # esi - eax 将结果存入 eax
+
+赋值指令
+    movl  %edi, %eax    # edi 的值存入 eax  ,将原来的值覆盖.
+
+条件码
+    比较指令
+        cmpl   Src2,Src1      
+        cmpq   Src2,Src1    #这两个的实际运算就是Src2 - Src1 就是个减法. 然后使用标志位表识.(CF,ZF,SF,OF).
+    测试指令
+        testl  Src2,Src1
+        testq  Src2,Src1    #计算Src1 & Src2并设置相应的条件码,但是不改变目的的操作数.(a&b==0 SF,a&b<0 SF,CF=OF=0).
+    读取条件码 : 读取当前的条件码(或者某些条件码的组合), 并存入目的字节寄存器.
+        sete 
+    条件传送指令 (x86-64)
+        cmovle  %edx, %eax    #上个判断为0时,不做动作,eax不动. 上个判断为1,则dex的值传送到eax.
+
+
+跳转指令
+    jmp    #无条件跳转
+    je     #看ZF 条件码标示.
+    js     #看SF 条件码标示.
+    jg     #看   ~(SF^OF)&~ZF  运算后结果
+
+条件移动指令
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

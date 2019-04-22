@@ -2,14 +2,14 @@
 <QPushButton>   使用按钮需要包含该头文件  QPushButton
 <QMenuBar>      菜单栏头文件   QMenuBar
 <QToolBar>      工具栏头文件   QToolBar
-  
-
-
-
-
-
-
-
+<QLabel>        状态栏提示信息文本
+<QStatusBar>    状态栏
+<QDockWidget>   浮动窗口(铆接部件)
+<QTextEdit>     文本编辑器(可以是核心部件)
+<QDialog>       对话框(拟态和非拟态)
+<QMessageBox>   系统标准的成员函数
+<QColorDialog>  选择颜色对话框
+<QFileDialog>   文件选择对话框
 
 
 
@@ -88,6 +88,7 @@ Lanbda 表达式
     添加菜单 addMenu("文件");
     添加菜单项  addAction("新建");
     分割线 addSeparator();
+
 工具栏
     可以有多个
     QToolBar
@@ -96,17 +97,79 @@ Lanbda 表达式
     工具栏中可以添加菜单项
     也可以添加分隔符.
 
+状态栏
+    只能有一个
+    statusBar() 返回 QStatus* sBar
+    addStatusBar(sBar)
+    添加内容 addWidget (QLabel)
+    添加右侧信息
+
+铆接部件
+    可以有多个
+    QDockWidget
+    addDockWidget(停靠范围, ....);
+    后期设置停靠
+
+核心部件
+    只能有一个
+    setCentralWidget()
+
+资源文件
+    将使用的图片资源放入到项目 目录中.
+    右键项目 - 添加新文件 - QT - QtResourceFile
+    起名称  res  生成 res.qrc
+    右键 res.qrc  - open in editor
+    添加前缀  添加文件 
+    使用 :+ 前缀名 + 文件名
+    ui->actionopen->setIcon(QIcon(":/tubiao/2.png"));
+
+对话框
+    模态对话框
+        exec 阻塞
+    非模态对话框
+        show 在栈上会一闪而过
+        所以 new 在堆上
+        设置属性  dlg3->setAttribute(Qt::WA_DeleteOnClose);  55号, 表示关闭对话框并释放内存
+    系统标准对话框 QMessageBox
+        静态成员函数
+        QMessageBox::警告, 提示信息,错误 ,问题 .四个类型
+            有5个参数; 1 父亲(一般都是this), 2 标题, 3 提示内容, 4 按键类型, 5 关联的回车按键
+            通过判断返回值来确定用户按了哪个按键.
+            if (QMessageBox::Save == QMessageBox::question(this, "问题", "question",QMessageBox::Save | QMessageBox::Cancel)){}
+    标准颜色对话框
+        QColorDialog
+        gitColor 返回 QColor 
+    标准文件对话框
+        QFileDialog
+        gitOpenFileName(父亲,标题,默认路径,过滤文件格式);   父亲一般都是this
+        返回值是选取文件的路径.
+
+登陆窗口布局
+    利用Widget 做容器, 容器内部 进行 水平,垂直布局
+    灵活运用弹簧
+    设置属性 , 间隙  默认是 12 12 12 12
+    垂直策略
+
+控件
+    按钮组
+        PushButton   按钮
+        ToolButton   工具按钮   多用于显示图片, TollButtonStle 修改风格, autoRaise 透明风格.
+        RadioButton  单选   setChecked(true)
+        CheckBox     多选   seatechange 独特的信号  0是未选中 1是半选中  2是选中
+
+    listWidget控件
+        QLstWidgetltem 每一个项目
+        item 可以设置对其方式  item->setTextAlignment(Qt::AlignHCenter);
+        一次性的将所有内容添加
+        additems(QStringList);
+        
 
 
-
-
-
-
-
-
-
-
-
+    QTreeWidget 控件使用
+        设置头 setHeaderLabels(QStringList() << "英雄"...);
+        每一个项目 QTreeWidgetItem
+        添加顶层项目  addTopLevelItem
+        添加顶层的子项目    addChild()
 
 
 
