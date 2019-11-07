@@ -1,0 +1,3 @@
+sudo pmset -a GPUSwitch 0 //强制使用集显
+sudo pmset -a GPUSwitch 1 //强制使用独显
+sudo pmset -a GPUSwitch 2 //自动切换模式

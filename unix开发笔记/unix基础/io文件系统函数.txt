@@ -127,9 +127,9 @@ lseek
             a. 文件指针移动到头部: 
                 lseek( fd, 0 , SEEK_SET);
             b. 获取文件指针当前的位置:
-                int len = lseek ( fd, 0 , SEEK_CUR );
+                long long  len = lseek ( fd, 0 , SEEK_CUR );
             c. 获取文件长度:
-                int len = lseek ( fd , 0 , SEEK_END );
+                long long  len = lseek ( fd , 0 , SEEK_END );
             d. 文件拓展: {两步操作}
                1. 源文件大小为 100kb , 拓展为 110kb.
                    lseek ( fd , 10*1024 , SEEK_END );
@@ -202,13 +202,13 @@ stat  获取文件属性.  命令和函数.   {函数和命令是相同的动作
        	 	S_IRWXO		 0007 掩码, 过滤 st_mode 中去除文件其他人权限以外的信息 if(st_mode & S_IRWXO)==S_IROTH)
        	 3-5 bit  -- 所属组权限
        	 	S_IRGRP     00040 读权限   (转换为二进制是 0100 0000)
-       	 	S_IWGRP     00020 读权限   (转换为二进制是 0010 0000)
-       	 	S_IXGRP     00010 读权限   (转换为二进制是 0001 0000)
+       	 	S_IWGRP     00020 写权限   (转换为二进制是 0010 0000)
+       	 	S_IXGRP     00010 执行权限   (转换为二进制是 0001 0000)
        	 	S_IRWXG     00070 掩码, 过滤 st_mode 中去除文件所属组权限以外的信息 if(st_mode & S_IRWXG)==S_IRGRP)
        	 6-8 bit   -- 文件所有者
        	    S_IRUSR	    00400 读权限   (转换为二进制是 0100 0000 0000)
-       	    S_IWUSR	    00200 读权限   (转换为二进制是 0010 0000 0000)
-       	    S_IXUSR	    00100 读权限   (转换为二进制是 0001 0000 0000)
+       	    S_IWUSR	    00200 写权限   (转换为二进制是 0010 0000 0000)
+       	    S_IXUSR	    00100 执行权限   (转换为二进制是 0001 0000 0000)
        	    S_IRWXU     00700 掩码, 过滤 st_mode 中去除文件所有者权限以外的信息.
        	 12-15 bit -- 文件的类型
        	 	S_IFSOCK    0140000 套接字
@@ -327,7 +327,7 @@ truncate  { 修改文件大小 }
 打开一个目录
 	DIR* opendir(const char* name);
 		参数  : 目录名
-		返回值: 指向目录的指针
+		返回值: 指向目录的指针  
 
 读目录
     struct dirent* readdir(DIR* dirp);
@@ -341,7 +341,7 @@ truncate  { 修改文件大小 }
         signed short int d_reclen;  // d_name 的长度, 不含字节NULL
         unsigned char    d_type  ;  // d_name 所指的文件的类型
         har   d_name[256] ;   // 文件名
-    }
+    };
 
     d_type  :
         DT_BLK  - 块设备
