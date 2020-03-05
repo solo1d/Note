@@ -81,48 +81,49 @@ int main(int argc, char* argv[]){
     pid_t pid = fork();
     if(pid > 0){
         exit(0);
+    }else if ( pid < 0)
+        fprintf(stderr, "创建第一个子进程失败\n");
 
-    }else if(pid == 0){
-        setsid();
-        chdir("/Users/ns/temp");  // 修改目录
-        umask(0);   // 重置文件掩码
+    // 注册信号捕捉
+    struct sigaction act;
+    act.sa_flags = 0;
+    act.sa_handler = dowork;
+    sigemptyset(&act.sa_mask);
+    sigaction(SIGALRM, &act, NULL);
+    signal(SIGHUP, SIG_IGN); 
+    
+    setsid();  // 让第一个子进程 创建会话
+    
+    pid = fork();
+        if(pid > 0){
+        exit(0);
+    }else if ( pid < 0)
+        fprintf(stderr, "创建第二个子进程失败\n");
 
-        close(STDIN_FILENO);
-        close(STDOUT_FILENO);
-        close(STDERR_FILENO);
-        // 关闭无用的文件描述符
+    
+    chdir("/Users/ns/temp");  // 修改目录
+    umask(0);   // 重置文件掩码
 
-        // 保证程序处于运行状态.
-        
-        // 核心操作
-        // 注册信号捕捉
-        struct sigaction act;
-        act.sa_flags = 0;
-        act.sa_handler = dowork;
-        sigemptyset(&act.sa_mask);
-        sigaction(SIGALRM, &act, NULL);
-        
-        struct itimerval val;
-        
-        // 循环触发时间间隔设定
-        val.it_value.tv_usec= 0;
-        val.it_value.tv_sec = 2;
-        
-        //第一次触发时间设定
-        val.it_interval.tv_usec = 0;
-        val.it_interval.tv_sec = 1;
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+    // 关闭无用的文件描述符
 
-        // 定时器完成
-        setitimer(ITIMER_REAL, &val,NULL);
-        
+    // 保证程序处于运行状态.
+    // 核心操作
+    struct itimerval val;
+    
+    // 循环触发时间间隔设定
+    val.it_value.tv_usec= 0;
+    val.it_value.tv_sec = 2;
+    
+    //第一次触发时间设定
+    val.it_interval.tv_usec = 0;
+    val.it_interval.tv_sec = 1;
 
-        while(1);
-
-    }else{
-        perror("fork error");
-        exit(1);
-    }
-
+    // 定时器完成
+    setitimer(ITIMER_REAL, &val,NULL);
+    while(1);
 
     return 0;
 }
@@ -183,7 +184,7 @@ int main(int argc, char* argv[]){
 
 在Linux 下 
     线程就是进程 - 轻量级的进程. 
-    对于内核来说, 线程就是进城,  (毕竟是使用进程当模型,修改出来的一个类似进程的版本)
+    对于内核来说, 线程就是进程,  (毕竟是使用进程当模型,修改出来的一个类似进程的版本)
     在底层实现上和 windows 是有本质的区别的. 千万不要混为一谈.
 
 在windows 下, 

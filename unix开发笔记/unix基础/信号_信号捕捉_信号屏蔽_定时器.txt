@@ -84,7 +84,7 @@ ctime(),  time()
 24   SIGXCPU -  进程执行时间超过了分配给进程的CPU时间,系统产生该信号并发送给进程.  - 终止进程
 25   SIGXFSZ -  超过文件的最大长度设置.                                      - 终止进程
 26   SIGVTALRM -虚拟时钟超时时产生该信号.类似于SIGALRM 但是该信号只能计算该进程占用cpu的使用时间.  - 终止进程
-27   SIGPROF -  类似于 SIGVTALRM, 它光包括该进程占用CPU时间,还包括执行系统调用时间.  - 终止进程
+27   SIGPROF -  类似于 SIGVTALRM, 它不光包括该进程占用CPU时间,还包括执行系统调用时间.  - 终止进程
 28   SIGWINCH - 窗口变化大小时发出.                                            - 忽略该信号
 29   SIGIO   -  此信号向进程指示发出了一个异步IO 事件.                            - 忽略该信号
 30   SIGPWR  -  关机.                                                        - 终止进程
@@ -124,8 +124,8 @@ ctime(),  time()
 
             real(运行时间) =  user(用户) + sys(内核) + 损耗(来自I/O操作)
 
-            unsigned int ret = alarm(10);    // 表示 还有10秒钟 程序结束, ret = 0
-                         ret = alarm(2);     // 重置了, 表示还剩下2秒就结束. ret = 8
+            unsigned int ret = alarm(10);    // 表示 还有10秒钟 程序结束,还没有开始计数 ,ret = 0
+                         ret = alarm(2);     // 重置了, 表示还剩下2秒就结束,等于过去了8秒, ret = 8 
 
 <sys/time.h>
      setitimer -- 定时器,并实现周期性定时. 到设定时间的时候它就会发出一个信号,这个信号可以被捕捉处理,由which参数决定.
@@ -190,7 +190,7 @@ ctime(),  time()
 sigprocmask  函数{ 屏蔽 和 解除信号屏蔽, 将自定义信号集设置给阻塞信号集 }
     函数原型:  int sigprocmask(int how, const sigset_t* set, sigset_t *oldset);
                     how   参数:  SIG_BLOCK    set表示添加需要屏蔽的信号,相当于 mask= mask|set
-                                SIG_UNBLOCK  set表示需要接触屏蔽的信号,相当于 mask= mask|~set
+                                SIG_UNBLOCK  set表示需要解除屏蔽的信号,相当于 mask= mask|~set
                                 SIGSETMASK   set表示替换原始屏蔽集, 相当于覆盖, mask = set 
                     
                     set   参数:  用户自定义的信号集.
@@ -223,7 +223,7 @@ sigaction 函数 { 捕捉信号, 全平台统一 }
     函数原型:
     typedef void (*sighandler_t)(int);  //处理函数回调函数指针.需要自己定义一个这样的函数,传入参数 int 是信号编号
 
-        int sigaction(int signum,        // 许要捕捉的信号(宏)
+        int sigaction(int signum,        // 需要捕捉的信号(宏)
             const struct sigaction* act, // 捕捉之后的行为参数, 就是 下面定义的结构体, 初始化3个值就可以了.
             struct sigaction* oldact     // 上一次捕捉信号的设置,给 NULL 就行了
             );
