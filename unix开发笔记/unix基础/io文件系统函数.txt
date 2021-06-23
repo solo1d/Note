@@ -281,11 +281,6 @@ truncate  { 修改文件大小 }
 			newpath : 新文件名
 
 
-修改当前进程(应用程序) 的路径 cd
-	int chdir(const char* path); 
-	    参数: 切换的路径
-
-
 获取当前进程的工作目录 pwd
 	char* getcwd( char* buf, size_t size);
 		返回值: 
@@ -296,10 +291,10 @@ truncate  { 修改文件大小 }
 			size: 缓冲区大小
 
 
-进入一个目录 chdir
+修改当前进程(应用程序) 的路径 cd, 进入一个目录 chdir
     int chdir( const char* path)
         参数:
-            path : 将要进入的目录的路径,绝对路径和相对路径.
+            path : 将要进入的目录的路径,绝对路径和相对路径. 切换的路径
         返回值: 
             =0  成功
             -1  失败,并且把 error 设置成相应的值.
