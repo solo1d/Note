@@ -736,7 +736,7 @@ epoll 三种工作模式.
                 // 有新的连接
                 if( fd == lfd ){
                     // 收到连接请求 -accept 不阻塞
-                    int cfd = sccept();
+                    int cfd = accept();
                     // 把 cfd 挂到树上 
                     ev.events  = EPOLLIN;
                     ev.data.fd = cfd;
@@ -745,7 +745,7 @@ epoll 三种工作模式.
                 // 已经连接的客户端有数据发送过来
                 else{
                     //只处理客户端发过来的数据, 也就是只处理读操作
-                    if(all[i].events & EPOLLIN){
+                    if(all[i].events & EPOLLOUT){
                         continue;
                     }
                     // 读数据
